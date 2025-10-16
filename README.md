@@ -23,7 +23,7 @@ Smart Email Writer leverages **Gemini 2.0 Flash Lite** AI to generate profession
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/haydarkadioglu/smart_email_writer
    cd smart_email_writer
    ```
 
@@ -161,8 +161,4 @@ smart_email_writer/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
 
-- [Google Gemini](https://ai.google.dev/) for AI capabilities
-- [Streamlit](https://streamlit.io/) for the web interface
-- [Pandas](https://pandas.pydata.org/) for data management
