@@ -126,15 +126,15 @@ def run_app():
     with col1:
         if st.button("Generate with Gemini", use_container_width=True):
             with st.spinner("Generating email draft..."):
-            generated = gemini_client.generate_email(
-                purpose=purpose,
-                recipient_name=recipient,
-                tone=tone,
-                language=language,
-                additional_context=additional_context,
-                profile=profile_store.load(),
-                email_length=email_length,
-            )
+                generated = gemini_client.generate_email(
+                    purpose=purpose,
+                    recipient_name=recipient,
+                    tone=tone,
+                    language=language,
+                    additional_context=additional_context,
+                    profile=profile_store.load(),
+                    email_length=email_length,
+                )
                 st.session_state["generated_email_body"] = generated.body
                 st.session_state["generated_subject"] = generated.subject
 
