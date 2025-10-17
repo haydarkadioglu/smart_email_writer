@@ -1,4 +1,5 @@
 from typing import Tuple
+import traceback
 
 from models.email_models import EmailRequest, Provider
 from clients.gmail_client import GmailClient
@@ -34,4 +35,5 @@ class EmailSender:
                 return False, "Unsupported provider"
             return True, ""
         except Exception as e:
-            return False, str(e)
+            details = traceback.format_exc()
+            return False, f"{e.__class__.__name__}: {e}\n{details}"

@@ -4,32 +4,86 @@ import streamlit as st
 from services.email_sender import EmailSender
 from services.excel_logger import ExcelLogger
 from services.profile_store import ProfileStore
+from services.settings_store import SettingsStore
 from clients.gemini_client import GeminiClient
+from clients.groq_client import GroqClient
 from models.email_models import EmailRequest, Provider, Attachment
 from config.app_config import GEMINI_MODEL
+from config.app_config import GROQ_MODEL
 
 
-def init_services(model_name: str = GEMINI_MODEL):
+def init_services(model_name: str = GEMINI_MODEL, provider: str = "gemini"):
     gemini_api_key = os.getenv("GEMINI_API_KEY", "")
-    gemini_client = GeminiClient(api_key=gemini_api_key, model_name=model_name)
+    groq_api_key = os.getenv("GROQ_API_KEY", "")
+    if provider == "groq":
+        ai_client = GroqClient(api_key=groq_api_key, model_name=model_name)
+    else:
+        ai_client = GeminiClient(api_key=gemini_api_key, model_name=model_name)
     email_sender = EmailSender()
     excel_logger = ExcelLogger()
     profile_store = ProfileStore()
-    return gemini_client, email_sender, excel_logger, profile_store
+    return ai_client, email_sender, excel_logger, profile_store
 
 
 def run_app():
     st.set_page_config(page_title="Smart Email Writer", page_icon="✉️", layout="centered")
 
-    # Model selection
-    model_choice = st.selectbox(
-        "Gemini Model",
-        options=["gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"],
-        index=0,
-        help="2.0-flash-lite is newest and fastest, Pro is most capable"
+    # Load persisted UI defaults
+    settings_store = SettingsStore()
+    settings = settings_store.load()
+    default_ai_provider = settings.get("ai_provider", "gemini")
+
+    # Provider + Model selection
+    provider_options = ["gemini", "groq"]
+    try:
+        provider_index = provider_options.index(default_ai_provider)
+    except ValueError:
+        provider_index = 0
+    ai_provider = st.selectbox(
+        "AI Provider",
+        options=provider_options,
+        index=provider_index,
+        help="Choose AI backend",
     )
-    
-    gemini_client, email_sender, excel_logger, profile_store = init_services(model_name=model_choice)
+
+    if ai_provider == "groq":
+        if not os.getenv("GROQ_API_KEY"):
+            st.warning("GROQ_API_KEY is not set. Requests will fail. Add it to your .env and restart.")
+        groq_default = settings.get("groq_model", GROQ_MODEL)
+        model_choice = st.text_input(
+            "Groq Model",
+            value=groq_default,
+            help="Enter any Groq model id (e.g., llama-3.1-70b-versatile)",
+        )
+    else:
+        gemini_models = ["gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"]
+        gemini_default = settings.get("gemini_model", GEMINI_MODEL)
+        try:
+            gemini_index = gemini_models.index(gemini_default)
+        except ValueError:
+            gemini_index = 0
+        model_choice = st.selectbox(
+            "Gemini Model",
+            options=gemini_models,
+            index=gemini_index,
+            help="2.0-flash-lite is newest and fastest, Pro is most capable",
+        )
+
+    # Save defaults control
+    col_sd1, col_sd2 = st.columns([1, 3])
+    with col_sd1:
+        if st.button("Save as default"):
+            new_settings = {
+                "ai_provider": ai_provider,
+            }
+            if ai_provider == "groq":
+                new_settings["groq_model"] = model_choice
+            else:
+                new_settings["gemini_model"] = model_choice
+            settings_store.save({**settings, **new_settings})
+            st.success("Defaults saved")
+
+    ai_client, email_sender, excel_logger, profile_store = init_services(model_name=model_choice, provider=ai_provider)
 
     # Defaults from environment
     env_provider = (os.getenv("SMTP_PROVIDER", "gmail") or "gmail").lower()
@@ -38,7 +92,7 @@ def run_app():
     default_password = os.getenv("SMTP_PASSWORD", "")
 
     st.title("Smart Email Writer ✨")
-    st.caption("Gemini-powered email generator with Gmail/Outlook sending and Excel logging")
+    st.caption("AI-powered email generator with Gmail/Outlook sending and Excel logging")
 
     with st.sidebar:
         st.header("SMTP Settings")
@@ -100,7 +154,12 @@ def run_app():
                 st.experimental_rerun()
 
     st.subheader("Generate Email")
-    purpose = st.text_input("Purpose/Topic", placeholder="Follow-up meeting request about Q4 roadmap")
+    purpose_default = settings.get("default_purpose", "")
+    purpose = st.text_input("Purpose/Topic", value=purpose_default, placeholder="Follow-up meeting request about Q4 roadmap")
+    save_purpose = st.button("Save Purpose")
+    if save_purpose:
+        settings_store.save({**settings, "default_purpose": purpose})
+        st.success("Purpose saved")
     recipient = st.text_input("Recipient Name", placeholder="Jane Doe")
     recipient_email = st.text_input("Recipient Email", placeholder="jane@example.com")
 
@@ -124,19 +183,22 @@ def run_app():
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Generate with Gemini", use_container_width=True):
+        if st.button("Generate with AI", use_container_width=True):
             with st.spinner("Generating email draft..."):
-                generated = gemini_client.generate_email(
-                    purpose=purpose,
-                    recipient_name=recipient,
-                    tone=tone,
-                    language=language,
-                    additional_context=additional_context,
-                    profile=profile_store.load(),
-                    email_length=email_length,
-                )
-                st.session_state["generated_email_body"] = generated.body
-                st.session_state["generated_subject"] = generated.subject
+                try:
+                    generated = ai_client.generate_email(
+                        purpose=purpose,
+                        recipient_name=recipient,
+                        tone=tone,
+                        language=language,
+                        additional_context=additional_context,
+                        profile=profile_store.load(),
+                        email_length=email_length,
+                    )
+                    st.session_state["generated_email_body"] = generated.body
+                    st.session_state["generated_subject"] = generated.subject
+                except Exception as e:
+                    st.error(str(e))
 
     with col2:
         if st.button("Clear Draft", use_container_width=True):
