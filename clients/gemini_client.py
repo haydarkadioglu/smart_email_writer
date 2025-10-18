@@ -122,6 +122,7 @@ class GeminiClient:
             - Make it engaging and relevant to the recipient
             - Include proper greeting and closing
             - Follow the specified email length: {email_length}
+            - For "Very Short": write only 1 concise paragraph but still include greeting and closing 
             - Do NOT repeat the instructions or context verbatim
             - Use the profile information naturally in the email content
 

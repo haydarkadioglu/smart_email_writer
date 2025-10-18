@@ -71,6 +71,8 @@ class GroqClient:
             - If this appears to be a job application, write a compelling cover letter
             - Personalize using the author's profile
             - Follow the specified length: {email_length}
+            - For "Very Short": write only 1 concise paragraph but still include greeting and closing, make line breaks and also add the links
+
             - Include greeting and closing
             - Return ONLY JSON with keys subject, body.
             """

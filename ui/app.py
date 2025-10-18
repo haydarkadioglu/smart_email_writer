@@ -169,7 +169,7 @@ def run_app():
     with col_gen2:
         language = st.selectbox("Language", ["English", "Turkish", "German", "French", "Spanish"], index=1)
     with col_gen3:
-        email_length = st.selectbox("Email Length", ["Short (1-2 paragraphs)", "Medium (3-4 paragraphs)", "Long (5+ paragraphs)"], index=1)
+        email_length = st.selectbox("Email Length", ["Very Short (1 paragraph)", "Short (1-2 paragraphs)", "Medium (3-4 paragraphs)", "Long (5+ paragraphs)", "Ultra Short (~700 chars)"], index=2)
 
     additional_context = st.text_area(
         "Additional Context",
