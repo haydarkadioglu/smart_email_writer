@@ -10,7 +10,20 @@ A comprehensive Streamlit application that leverages Google's Gemini AI to gener
 
 ## ✨ Features
 
-Smart Email Writer leverages **Gemini 2.0 Flash Lite** AI to generate professional emails with customizable tone, length, and language options. The app features comprehensive profile management for personal and professional details, supports Gmail and Outlook/Hotmail delivery with file attachments, and maintains detailed Excel logs of all sent emails. Perfect for job applications, business communications, and automated email workflows.
+Smart Email Writer leverages **Gemini 2.0 Flash Lite** AI to generate professional emails with customizable tone, length, and language options. The app features comprehensive profile management for personal and professional details, supports Gmail and Outlook/Hotmail delivery with file attachments, and maintains detailed Excel logs of all sent emails. 
+
+### 🆕 **NEW: Bulk Email Feature**
+- **CSV/Excel Import**: Upload recipient lists from CSV or Excel files
+- **Dynamic Column Mapping**: Map any column names to recipient data fields
+- **Custom Fields**: Add personalized fields for advanced personalization
+- **🤖 AI-Powered Generation**: Generate unique emails for each recipient using Gemini/Groq
+- **📝 Template-based Personalization**: Use placeholders for quick personalization
+- **Email Validation**: Automatic validation of email addresses
+- **Progress Tracking**: Real-time progress bar and status updates
+- **Rate Limiting**: Configurable delays to avoid spam filters
+- **Batch Processing**: Send hundreds of personalized emails efficiently
+
+Perfect for job applications, business communications, marketing campaigns, and automated email workflows.
 
 ## 🚀 Quick Start
 
@@ -91,7 +104,9 @@ smart_email_writer/
 ├── services/
 │   ├── email_sender.py    # Email orchestration
 │   ├── excel_logger.py    # Activity logging
-│   └── profile_store.py   # Profile management
+│   ├── profile_store.py   # Profile management
+│   ├── file_parser.py     # CSV/Excel file parsing
+│   └── bulk_email_sender.py # Bulk email processing
 ├── models/
 │   └── email_models.py    # Data models
 ├── ui/
@@ -102,18 +117,40 @@ smart_email_writer/
 
 ## 🎯 Usage Examples
 
-### Job Application Email
+### Single Email Generation
+**Job Application Email**
 1. **Fill your profile** with professional details
 2. **Set purpose**: "Software Developer position application"
 3. **Add context**: Job requirements, company details
 4. **Select tone**: Professional, Length: Medium
 5. **Generate & send**
 
-### Business Follow-up
+**Business Follow-up**
 1. **Purpose**: "Meeting follow-up regarding Q4 project"
 2. **Context**: Meeting outcomes, next steps
 3. **Tone**: Professional, Length: Short
 4. **Generate & send**
+
+### 📧 Bulk Email Campaigns
+
+**🤖 AI-Powered Marketing Campaign**
+1. **Prepare CSV/Excel file** with columns: Name, Email, Company, Industry, Description
+2. **Upload file** and map columns to recipient fields
+3. **Enable AI Generation** and set purpose: "Introduce our new product to potential clients"
+4. **Configure AI settings**: Professional tone, English, Medium length
+5. **Add context**: "We're launching a new AI-powered CRM solution"
+6. **Preview data** and **Send bulk emails** - AI generates unique emails for each recipient
+
+**📝 Template-based Event Invitations**
+1. **Create recipient list** with Name, Email, Event, Date, Location
+2. **Map columns** and add custom fields for event details
+3. **Use template**: "Dear {name}, you're invited to {event} on {date} at {location}"
+4. **Send personalized invitations** to all recipients
+
+**🎯 Hybrid Approach**
+- Use **AI Generation** for high-value, personalized communications
+- Use **Template-based** for quick, standardized messages
+- Mix both approaches based on your campaign needs
 
 ## 🔒 Security & Privacy
 
@@ -142,12 +179,14 @@ smart_email_writer/
 
 ## 📈 Future Enhancements
 
+- [x] ~~Bulk email sending~~ ✅ **COMPLETED**
 - [ ] Email templates library
-- [ ] Bulk email sending
 - [ ] Email scheduling
 - [ ] Advanced analytics
 - [ ] Multi-account support
 - [ ] Email signature management
+- [ ] Email campaign analytics
+- [ ] A/B testing for email templates
 
 ## 🤝 Contributing
 
