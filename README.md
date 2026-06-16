@@ -25,6 +25,15 @@ Smart Email Writer leverages **Gemini 2.0 Flash Lite** AI to generate profession
 
 Perfect for job applications, business communications, marketing campaigns, and automated email workflows.
 
+### 🖥️ **NEW: Qt6 Desktop GUI**
+- **Native Desktop Application**: Modern Qt6-based GUI alongside Streamlit web interface
+- **Professional Design**: Dark theme with gradients, animations, and modern aesthetics
+- **Full Feature Parity**: All Streamlit features available in desktop app
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Offline Capable**: No browser required, runs as standalone application
+- **Rich UI Components**: Advanced forms, progress tracking, and data visualization
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -68,8 +77,22 @@ Perfect for job applications, business communications, marketing campaigns, and 
    ```
 
 5. **Run the application**
+   
+   **Option A: Streamlit Web Interface**
    ```bash
    streamlit run main.py
+   ```
+   
+   **Option B: Qt6 Desktop Application (NEW!)**
+   ```bash
+   # Install Qt6 dependencies first
+   pip install -r requirements-qt.txt
+   
+   # Run Qt6 GUI
+   python main_qt.py
+   
+   # Or use the batch script (Windows)
+   run_qt.bat
    ```
 
 ## 🔧 Configuration
