@@ -3,11 +3,22 @@
    ========================================================================== */
 
 let editingTemplateId = null;
+let editingPromptTemplateId = null;
 
 function bindTemplateEvents() {
+    // Email templates
     document.getElementById('btn-new-template').addEventListener('click', openNewTemplateForm);
     document.getElementById('btn-save-template-form').addEventListener('click', saveTemplateForm);
     document.getElementById('btn-cancel-template-form').addEventListener('click', closeTemplateForm);
+
+    // Prompt templates
+    document.getElementById('btn-new-prompt-template').addEventListener('click', openNewPromptTemplateForm);
+    document.getElementById('btn-save-prompt-template-form').addEventListener('click', savePromptTemplateForm);
+    document.getElementById('btn-cancel-prompt-template-form').addEventListener('click', closePromptTemplateForm);
+
+    // Toggle sub-tabs
+    document.getElementById('btn-toggle-email-templates').addEventListener('click', () => switchTemplateSubTab('email'));
+    document.getElementById('btn-toggle-prompt-templates').addEventListener('click', () => switchTemplateSubTab('prompt'));
 }
 
 // ── Render all templates ───────────────────────────────────────────────────
@@ -123,4 +134,163 @@ function escapeHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+// ── Sub-tab toggling ───────────────────────────────────────────────────────
+function switchTemplateSubTab(type) {
+    const btnEmail = document.getElementById('btn-toggle-email-templates');
+    const btnPrompt = document.getElementById('btn-toggle-prompt-templates');
+    const emailContainer = document.getElementById('email-templates-container');
+    const promptContainer = document.getElementById('prompt-templates-container');
+    const btnNewEmail = document.getElementById('btn-new-template');
+    const btnNewPrompt = document.getElementById('btn-new-prompt-template');
+
+    // Close forms
+    closeTemplateForm();
+    closePromptTemplateForm();
+
+    if (type === 'email') {
+        btnEmail.classList.add('active');
+        btnPrompt.classList.remove('active');
+        emailContainer.style.display = 'block';
+        promptContainer.style.display = 'none';
+        btnNewEmail.style.display = 'inline-block';
+        btnNewPrompt.style.display = 'none';
+    } else {
+        btnEmail.classList.remove('active');
+        btnPrompt.classList.add('active');
+        emailContainer.style.display = 'none';
+        promptContainer.style.display = 'block';
+        btnNewEmail.style.display = 'none';
+        btnNewPrompt.style.display = 'inline-block';
+        
+        renderPromptTemplates();
+    }
+}
+
+// ── Render all prompt templates ─────────────────────────────────────────────
+async function renderPromptTemplates() {
+    const grid = document.getElementById('prompt-templates-grid');
+    if (!grid) return;
+
+    const list = getSavedPromptTemplates();
+    if (!list.length) {
+        grid.innerHTML = '<p style="color:var(--text-secondary)">No prompt templates yet.</p>';
+        return;
+    }
+
+    grid.innerHTML = list.map(t => promptTemplateCard(t)).join('');
+
+    // Bind card buttons
+    grid.querySelectorAll('[data-prompt-id]').forEach(btn => {
+        const id = btn.dataset.promptId;
+        if (btn.dataset.action === 'edit')   btn.addEventListener('click', () => editPromptTemplate(id));
+        if (btn.dataset.action === 'delete') btn.addEventListener('click', () => deletePromptTemplate(id));
+    });
+}
+
+function promptTemplateCard(t) {
+    const preview = (t.prompt || '').replace(/\n/g, ' ').slice(0, 130) + (t.prompt.length > 130 ? '…' : '');
+    return `
+    <div class="template-card">
+        <div class="template-card-header">
+            <h4>${escapeHtml(t.title)}</h4>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+                <span style="font-size:11px;color:var(--text-secondary);font-family:monospace">${t.id}</span>
+            </div>
+        </div>
+        <p class="template-card-preview">${escapeHtml(preview)}</p>
+        <div class="template-actions">
+            <button class="btn btn-sm btn-secondary" data-prompt-id="${t.id}" data-action="edit">Edit</button>
+            <button class="btn btn-sm btn-danger" data-prompt-id="${t.id}" data-action="delete">Delete</button>
+        </div>
+    </div>`;
+}
+
+// ── CRUD for Prompt Templates ───────────────────────────────────────────────
+function openNewPromptTemplateForm() {
+    editingPromptTemplateId = null;
+    document.getElementById('prompt-template-form-title').innerText = "New Prompt Template";
+    setVal('prompt-template-form-name',   '');
+    setVal('prompt-template-form-prompt', '');
+    document.getElementById('prompt-template-form-section').style.display = 'block';
+}
+
+function closePromptTemplateForm() {
+    document.getElementById('prompt-template-form-section').style.display = 'none';
+}
+
+function editPromptTemplate(id) {
+    const list = getSavedPromptTemplates();
+    const t = list.find(x => x.id === id);
+    if (!t) return;
+    editingPromptTemplateId = id;
+    document.getElementById('prompt-template-form-title').innerText = "Edit Prompt Template";
+    setVal('prompt-template-form-name',   t.title);
+    setVal('prompt-template-form-prompt', t.prompt);
+    document.getElementById('prompt-template-form-section').style.display = 'block';
+}
+
+async function savePromptTemplateForm() {
+    const title = getVal('prompt-template-form-name');
+    const promptText = getVal('prompt-template-form-prompt');
+    if (!title) { alert("Prompt name is required."); return; }
+    if (!promptText) { alert("Prompt details are required."); return; }
+
+    const list = [...getSavedPromptTemplates()];
+
+    if (editingPromptTemplateId) {
+        // Update
+        const idx = list.findIndex(x => x.id === editingPromptTemplateId);
+        if (idx !== -1) {
+            list[idx].title = title;
+            list[idx].prompt = promptText;
+        }
+    } else {
+        // Add
+        const newId = 'prompt_' + Math.random().toString(36).substr(2, 9);
+        list.push({
+            id: newId,
+            title,
+            prompt: promptText
+        });
+    }
+
+    // Save to settings config via python bridge save_config
+    const result = await pywebview.api.save_config({
+        prompt_templates: list
+    });
+
+    if (result.success) {
+        // Update local memory
+        if (appConfig) {
+            if (!appConfig.settings) appConfig.settings = {};
+            appConfig.settings.prompt_templates = list;
+        }
+        closePromptTemplateForm();
+        updateSinglePromptTemplateDropdown();
+        await renderPromptTemplates();
+    } else {
+        alert("Save failed: " + result.error);
+    }
+}
+
+async function deletePromptTemplate(id) {
+    if (!confirm("Delete this prompt template?")) return;
+    const list = getSavedPromptTemplates().filter(x => x.id !== id);
+
+    const result = await pywebview.api.save_config({
+        prompt_templates: list
+    });
+
+    if (result.success) {
+        if (appConfig) {
+            if (!appConfig.settings) appConfig.settings = {};
+            appConfig.settings.prompt_templates = list;
+        }
+        updateSinglePromptTemplateDropdown();
+        await renderPromptTemplates();
+    } else {
+        alert("Delete failed: " + result.error);
+    }
 }

@@ -94,26 +94,27 @@
                     <div class="panel-section">
                         <h3>AI Prompt</h3>
                         <div class="form-group">
-                            <label class="form-label">Email Purpose</label>
-                            <textarea id="single-purpose" class="form-input" rows="3"
-                                placeholder="E.g. Schedule a demo, follow up on proposal…"></textarea>
+                            <label class="form-label">Prompt Template</label>
+                            <select id="single-prompt-template" class="form-input form-select">
+                                <option value="custom">Custom (Type below)</option>
+                                <option value="collab">Collaboration / Discovery Call</option>
+                                <option value="job">Job Application / CV Outreach</option>
+                                <option value="followup">Meeting Follow-Up</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                                <label class="form-label" style="margin-bottom:0;">Email Purpose / Prompt Details</label>
+                                <button id="btn-edit-purpose" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 11px;">Edit Details</button>
+                            </div>
+                            <div id="single-purpose-preview" style="padding: 10px 14px; background-color: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 40px; box-sizing: border-box;" title="Click to Edit Details">
+                                (No details entered)
+                            </div>
+                            <input type="hidden" id="single-purpose" value="">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Subject Override</label>
                             <input id="email-subject" type="text" class="form-input" placeholder="Auto-generated if empty">
-                        </div>
-                    </div>
-
-                    <!-- Sender -->
-                    <div class="panel-section">
-                        <h3>Sender Identity</h3>
-                        <div class="form-group">
-                            <label class="form-label">Your Name</label>
-                            <input id="sender-name"  type="text"  class="form-input" placeholder="Jane Smith">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Your Email</label>
-                            <input id="sender-email" type="email" class="form-input" placeholder="jane@company.com">
                         </div>
                     </div>
                     <!-- Actions -->
@@ -179,17 +180,6 @@
                     <div id="attachment-list" class="attachment-list"></div>
 
                     <div class="sender-actions">
-                        <div style="display:flex;gap:8px;align-items:center">
-                            <label class="form-label" style="margin:0">SMTP:</label>
-                            <select id="smtp-provider" class="form-input form-select" style="width:auto">
-                                <option value="Gmail">Gmail</option>
-                                <option value="Outlook">Outlook</option>
-                                <option value="Yahoo">Yahoo</option>
-                                <option value="Custom">Custom</option>
-                            </select>
-                            <input id="smtp-email"    type="email"    class="form-input" placeholder="your@gmail.com" style="width:180px">
-                            <input id="smtp-password" type="password" class="form-input" placeholder="App password"  style="width:140px">
-                        </div>
                         <button id="btn-send-single" class="btn btn-primary">📨 Send Email</button>
                     </div>
                 </div>
@@ -309,15 +299,24 @@
 
     <!-- ── TEMPLATES ─────────────────────────────────────────────────── -->
     <section id="templates" class="tab-content">
-        <div class="page-header">
+        <div class="page-header" style="margin-bottom: 16px;">
             <div>
                 <h1 class="page-title">Templates</h1>
-                <p class="page-subtitle">Save, edit and reuse email templates</p>
+                <p class="page-subtitle">Save and edit email and prompt templates</p>
             </div>
-            <button id="btn-new-template" class="btn btn-primary">+ New Template</button>
+            <div>
+                <button id="btn-new-template" class="btn btn-primary">+ New Email Template</button>
+                <button id="btn-new-prompt-template" class="btn btn-primary" style="display:none;">+ New Prompt Template</button>
+            </div>
         </div>
 
-        <!-- New/Edit form (hidden by default) -->
+        <!-- Tab Toggle for Email vs Prompt Templates -->
+        <div class="toggle-group" style="margin-bottom: 24px;">
+            <button id="btn-toggle-email-templates" class="toggle-btn active">Email Draft Templates</button>
+            <button id="btn-toggle-prompt-templates" class="toggle-btn">AI Prompt Templates</button>
+        </div>
+
+        <!-- New/Edit Email Template Form (hidden by default) -->
         <div id="template-form-section" class="card" style="display:none;margin-bottom:24px">
             <h3 id="template-form-title">New Template</h3>
             <div class="form-group">
@@ -339,9 +338,36 @@
             </div>
         </div>
 
-        <div class="templates-list-container">
-            <h3>Saved Templates</h3>
+        <!-- New/Edit Prompt Template Form (hidden by default) -->
+        <div id="prompt-template-form-section" class="card" style="display:none;margin-bottom:24px">
+            <h3 id="prompt-template-form-title">New Prompt Template</h3>
+            <div class="form-group">
+                <label class="form-label">Name *</label>
+                <input id="prompt-template-form-name" type="text" class="form-input" placeholder="E.g., Collaboration Request">
+            </div>
+            <div class="form-group">
+                <label class="form-label">AI Prompt Details *</label>
+                <textarea id="prompt-template-form-prompt" class="form-input" rows="6"
+                    placeholder="Describe the instructions/purpose for this template..."></textarea>
+            </div>
+            <div class="template-form-actions">
+                <button id="btn-cancel-prompt-template-form" class="btn btn-secondary">Cancel</button>
+                <button id="btn-save-prompt-template-form"   class="btn btn-primary">Save Prompt Template</button>
+            </div>
+        </div>
+
+        <!-- Saved Email Templates Grid -->
+        <div id="email-templates-container" class="templates-list-container">
+            <h3>Saved Email Templates</h3>
             <div id="templates-grid" class="templates-grid">
+                <p style="color:var(--text-secondary)">Loading…</p>
+            </div>
+        </div>
+
+        <!-- Saved Prompt Templates Grid (hidden by default) -->
+        <div id="prompt-templates-container" class="templates-list-container" style="display:none;">
+            <h3>Saved AI Prompt Templates</h3>
+            <div id="prompt-templates-grid" class="templates-grid">
                 <p style="color:var(--text-secondary)">Loading…</p>
             </div>
         </div>
@@ -533,6 +559,23 @@
     </section>
 
 </main>
+
+<!-- Modal for editing Email Purpose / Prompt Details -->
+<div id="purpose-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Email Purpose / Prompt Details</h3>
+            <button id="btn-close-purpose-modal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <textarea id="modal-purpose-textarea" class="form-input" rows="12" style="width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; resize: vertical;" placeholder="Describe what you want the email to achieve..."></textarea>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+            <button id="btn-cancel-purpose-modal" class="btn btn-secondary">Cancel</button>
+            <button id="btn-save-purpose-modal" class="btn btn-primary">Save & Close</button>
+        </div>
+    </div>
+</div>
 
 <!-- ── JS Modules ──────────────────────────────────────────────────────── -->
 <script src="js/core.js"></script>

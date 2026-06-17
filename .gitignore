@@ -5,3 +5,6 @@
 /logs/
 *.json
 venv/
+build/
+dist/
+*.spec

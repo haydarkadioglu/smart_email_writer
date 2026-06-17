@@ -2,6 +2,101 @@
    single_email.js  –  Single Email tab logic
    ========================================================================== */
 
+const DEFAULT_PROMPT_TEMPLATES = [
+    { id: "collab", title: "Collaboration / Discovery Call", prompt: "Schedule a brief 10-minute discovery call to discuss potential collaboration and partnership opportunities." },
+    { id: "job", title: "Job Application / CV Outreach", prompt: "Reach out to express interest in open positions and discuss how my skills and experience align with the team's needs." },
+    { id: "followup", title: "Meeting Follow-Up", prompt: "Follow up regarding our recent conversation, summarize the key points we discussed, and schedule a next meeting to align on next steps." }
+];
+
+function getSavedPromptTemplates() {
+    if (appConfig && appConfig.settings && appConfig.settings.prompt_templates) {
+        return appConfig.settings.prompt_templates;
+    }
+    return DEFAULT_PROMPT_TEMPLATES;
+}
+
+function updateSinglePromptTemplateDropdown() {
+    const selector = document.getElementById('single-prompt-template');
+    if (!selector) return;
+    const val = selector.value;
+    const list = getSavedPromptTemplates();
+    let html = `<option value="custom">Custom (Type below)</option>`;
+    list.forEach(t => {
+        html += `<option value="${t.id}">${escapeHtml(t.title)}</option>`;
+    });
+    selector.innerHTML = html;
+    if (list.some(t => t.id === val)) {
+        selector.value = val;
+    } else {
+        selector.value = 'custom';
+    }
+}
+
+function initPurposeModal() {
+    const modal = document.getElementById('purpose-modal');
+    const preview = document.getElementById('single-purpose-preview');
+    const btnEdit = document.getElementById('btn-edit-purpose');
+    const btnClose = document.getElementById('btn-close-purpose-modal');
+    const btnCancel = document.getElementById('btn-cancel-purpose-modal');
+    const btnSave = document.getElementById('btn-save-purpose-modal');
+    const textarea = document.getElementById('modal-purpose-textarea');
+    const hiddenInput = document.getElementById('single-purpose');
+
+    function openModal() {
+        textarea.value = hiddenInput.value;
+        modal.classList.add('active');
+        textarea.focus();
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    function saveValue() {
+        const val = textarea.value;
+        hiddenInput.value = val;
+        
+        if (val.trim()) {
+            preview.innerText = val.trim();
+            preview.style.color = 'var(--text-primary)';
+        } else {
+            preview.innerText = '(No details entered)';
+            preview.style.color = 'var(--text-secondary)';
+        }
+
+        const currentTemplateVal = document.getElementById('single-prompt-template').value;
+        if (currentTemplateVal !== 'custom') {
+            const templates = getSavedPromptTemplates();
+            const currentTemplate = templates.find(t => t.id === currentTemplateVal);
+            if (!currentTemplate || currentTemplate.prompt !== val) {
+                document.getElementById('single-prompt-template').value = 'custom';
+            }
+        }
+        closeModal();
+    }
+
+    preview.addEventListener('click', openModal);
+    btnEdit.addEventListener('click', openModal);
+    btnClose.addEventListener('click', closeModal);
+    btnCancel.addEventListener('click', closeModal);
+    btnSave.addEventListener('click', saveValue);
+}
+
+function updateSinglePurpose(text) {
+    const hiddenInput = document.getElementById('single-purpose');
+    const preview = document.getElementById('single-purpose-preview');
+    if (hiddenInput) hiddenInput.value = text;
+    if (preview) {
+        if (text.trim()) {
+            preview.innerText = text.trim();
+            preview.style.color = 'var(--text-primary)';
+        } else {
+            preview.innerText = '(No details entered)';
+            preview.style.color = 'var(--text-secondary)';
+        }
+    }
+}
+
 function bindSingleEmailEvents() {
     document.getElementById('btn-generate-single').addEventListener('click', handleGenerate);
     document.getElementById('btn-refine').addEventListener('click', handleRefine);
@@ -10,6 +105,19 @@ function bindSingleEmailEvents() {
     document.getElementById('draft-output').addEventListener('input', runEditorAnalysis);
     document.getElementById('btn-copy-draft').addEventListener('click', handleCopyDraft);
     document.getElementById('btn-save-template-single').addEventListener('click', handleSaveFromDraft);
+
+    initPurposeModal();
+
+    // AI Prompt templates change listener
+    document.getElementById('single-prompt-template').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'custom') return;
+        const templates = getSavedPromptTemplates();
+        const found = templates.find(t => t.id === val);
+        if (found) {
+            updateSinglePurpose(found.prompt);
+        }
+    });
 }
 
 // ── Generate ──────────────────────────────────────────────────────────────
@@ -17,8 +125,6 @@ async function handleGenerate() {
     const btn = document.getElementById('btn-generate-single');
     setBtnLoading(btn, true, "✦ Generating...");
     const payload = {
-        name:        getVal('sender-name'),
-        email:       getVal('sender-email'),
         receiver:    getVal('receiver-name'),
         company:     getVal('receiver-company'),
         purpose:     getVal('single-purpose'),
@@ -69,9 +175,9 @@ async function handleSendSingle() {
 
     setBtnLoading(btn, true, "⏳ Sending...");
     const result = await pywebview.api.send_email({
-        smtp_provider: getVal('smtp-provider'),
-        smtp_email:    getVal('smtp-email'),
-        smtp_password: getVal('smtp-password'),
+        smtp_provider: getVal('smtp-provider-settings'),
+        smtp_email:    getVal('smtp-email-settings'),
+        smtp_password: getVal('smtp-password-settings'),
         to_email:  to,
         subject,
         body,

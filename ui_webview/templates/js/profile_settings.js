@@ -32,11 +32,7 @@ async function saveProfile() {
     setBtnLoading(btn, false);
     showFlash('flash-profile', result.success ? '✔ Profile saved' : '✘ ' + result.error);
 
-    if (result.success) {
-        // Prefill single-email sender fields from profile
-        setVal('sender-name',  getVal('profile-name'));
-        setVal('sender-email', getVal('profile-email'));
-    }
+
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -120,10 +116,6 @@ async function saveSettings() {
     showFlash('flash-settings', result.success ? '✔ Settings saved' : '✘ ' + result.error, !result.success);
     if (result.success) {
         if (appConfig) appConfig.settings = { ...appConfig.settings, ...result.settings };
-        // Sync back to Single Email SMTP inputs
-        setVal('smtp-provider', getVal('smtp-provider-settings'));
-        setVal('smtp-email',    getVal('smtp-email-settings'));
-        setVal('smtp-password', getVal('smtp-password-settings'));
     }
 }
 

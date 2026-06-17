@@ -136,9 +136,9 @@ async function handleBulkSendAll() {
     const delay = parseInt(getVal('email-delay-seconds') || "2");
     const result = await pywebview.api.send_bulk({
         emails:   approvalQueue,
-        smtp_provider: getVal('smtp-provider'),
-        smtp_email:    getVal('smtp-email'),
-        smtp_password: getVal('smtp-password'),
+        smtp_provider: getVal('smtp-provider-settings'),
+        smtp_email:    getVal('smtp-email-settings'),
+        smtp_password: getVal('smtp-password-settings'),
         delay_seconds: delay,
     });
     setBtnLoading(btn, false);

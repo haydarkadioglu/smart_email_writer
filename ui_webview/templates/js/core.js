@@ -40,6 +40,9 @@ window.addEventListener('pywebviewready', async () => {
         bindProfileAndSettingsEvents();
 
         // Boot-time data loads
+        if (typeof updateSinglePromptTemplateDropdown === 'function') {
+            updateSinglePromptTemplateDropdown();
+        }
         await renderTemplates();
         await loadHistory();
         runEditorAnalysis();
@@ -130,14 +133,15 @@ function populateConfigDefaults() {
     const smtpProv = s.smtp_provider  || appConfig.env_smtp_provider || "Gmail";
     const smtpEmail = s.smtp_email     || appConfig.env_smtp_email    || "";
     const smtpPass = s.smtp_password  || "";
-    setVal('smtp-provider',          smtpProv);
     setVal('smtp-provider-settings', smtpProv);
-    setVal('smtp-email',             smtpEmail);
     setVal('smtp-email-settings',    smtpEmail);
-    setVal('smtp-password',          smtpPass);
     setVal('smtp-password-settings', smtpPass);
 
-    setVal('single-purpose', s.default_purpose || "");
+    if (typeof updateSinglePurpose === 'function') {
+        updateSinglePurpose(s.default_purpose || "");
+    } else {
+        setVal('single-purpose', s.default_purpose || "");
+    }
 
     // Restore saved provider selections
     setVal('settings-default-provider', s.ai_provider || "gemini");
