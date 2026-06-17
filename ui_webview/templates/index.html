@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="obsidian-dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Email Writer</title>
+    <meta name="description" content="AI-powered email drafting and bulk sending desktop app.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SIDEBAR NAVIGATION
+════════════════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-mark">✉</div>
+        <div>
+            <div class="app-name">SmartMail</div>
+            <div class="app-subtitle">AI Email Writer</div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="single-email">
+            <span class="nav-icon">📝</span>
+            <span class="nav-label">Single Email</span>
+        </button>
+        <button class="nav-item" data-tab="bulk-email">
+            <span class="nav-icon">📦</span>
+            <span class="nav-label">Bulk Email</span>
+        </button>
+        <button class="nav-item" data-tab="templates">
+            <span class="nav-icon">📁</span>
+            <span class="nav-label">Templates</span>
+        </button>
+        <button class="nav-item" data-tab="history">
+            <span class="nav-icon">🕘</span>
+            <span class="nav-label">History</span>
+        </button>
+        <button class="nav-item" data-tab="profile">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Profile</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+        </button>
+    </nav>
+
+    <div class="sidebar-footer">
+        <span class="status-indicator"></span>
+        <span id="api-status">Connecting…</span>
+    </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════════════════════════ -->
+<main class="main-content">
+
+    <!-- ── SINGLE EMAIL ──────────────────────────────────────────────── -->
+    <section id="single-email" class="tab-content active">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Single Email</h1>
+                <p class="page-subtitle">Craft a personalised AI email and send it instantly</p>
+            </div>
+            <span id="flash-single" class="flash-message"></span>
+        </div>
+
+        <div class="two-col-layout">
+
+            <!-- Left: Control panel -->
+            <div class="sidebar-panel card">
+                <div class="control-panel">
+                    <!-- Recipient -->
+                    <div class="panel-section">
+                        <h3>Recipient</h3>
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input id="receiver-name"    type="text" class="form-input" placeholder="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input id="receiver-email"   type="email" class="form-input" placeholder="john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Company</label>
+                            <input id="receiver-company" type="text" class="form-input" placeholder="Acme Corp">
+                        </div>
+                    </div>
+                    <!-- Purpose -->
+                    <div class="panel-section">
+                        <h3>AI Prompt</h3>
+                        <div class="form-group">
+                            <label class="form-label">Email Purpose</label>
+                            <textarea id="single-purpose" class="form-input" rows="3"
+                                placeholder="E.g. Schedule a demo, follow up on proposal…"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject Override</label>
+                            <input id="email-subject" type="text" class="form-input" placeholder="Auto-generated if empty">
+                        </div>
+                    </div>
+
+                    <!-- Sender -->
+                    <div class="panel-section">
+                        <h3>Sender Identity</h3>
+                        <div class="form-group">
+                            <label class="form-label">Your Name</label>
+                            <input id="sender-name"  type="text"  class="form-input" placeholder="Jane Smith">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Your Email</label>
+                            <input id="sender-email" type="email" class="form-input" placeholder="jane@company.com">
+                        </div>
+                    </div>
+                    <!-- Actions -->
+                    <div class="panel-actions">
+                        <button id="btn-generate-single" class="btn btn-primary btn-block">✦ Generate Email</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Editor -->
+            <div class="editor-container">
+                <div class="card editor-card">
+                    <div class="editor-header">
+                        <h3>Email Draft</h3>
+                        <div style="display:flex;gap:8px">
+                            <button id="btn-copy-draft"             class="btn btn-sm btn-secondary">📋 Copy</button>
+                            <button id="btn-save-template-single"   class="btn btn-sm btn-secondary">💾 Save Template</button>
+                            <span id="flash-copy" class="flash-message"></span>
+                        </div>
+                    </div>
+                    <textarea id="draft-output" class="form-input flex-grow-textarea"
+                        placeholder="Your AI-drafted email will appear here…"></textarea>
+
+                    <!-- Spam / Readability bar -->
+                    <div class="spam-readability-bar">
+                        <span class="metric-item">
+                            <span class="metric-label">Words:</span>
+                            <span id="stat-words">0</span>
+                        </span>
+                        <span class="metric-item">
+                            <span class="metric-label">Chars:</span>
+                            <span id="stat-chars">0</span>
+                        </span>
+                        <span class="metric-item">
+                            <span class="metric-label">Readability:</span>
+                            <span id="stat-readability">—</span>
+                        </span>
+                        <span class="metric-item">
+                            <span class="metric-label">Spam:</span>
+                            <span id="stat-spam">0%</span>
+                        </span>
+                        <span class="metric-item matches-item">
+                            <span class="metric-label">Triggers:</span>
+                            <span id="stat-keywords" class="spam-keywords">(none)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- AI Refiner -->
+                <div class="card refiner-card">
+                    <h3>✨ AI Refine</h3>
+                    <div class="refine-input-group">
+                        <input id="refine-instruction" type="text" class="form-input"
+                            placeholder="Make it shorter, more formal, add a P.S…">
+                        <button id="btn-refine" class="btn btn-secondary">Refine</button>
+                    </div>
+                </div>
+
+                <!-- Attachments & Send -->
+                <div class="card sender-card">
+                    <h3>Attachments & Send</h3>
+                    <button id="btn-attach-file" class="btn btn-sm btn-secondary">📎 Add Attachment</button>
+                    <div id="attachment-list" class="attachment-list"></div>
+
+                    <div class="sender-actions">
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <label class="form-label" style="margin:0">SMTP:</label>
+                            <select id="smtp-provider" class="form-input form-select" style="width:auto">
+                                <option value="Gmail">Gmail</option>
+                                <option value="Outlook">Outlook</option>
+                                <option value="Yahoo">Yahoo</option>
+                                <option value="Custom">Custom</option>
+                            </select>
+                            <input id="smtp-email"    type="email"    class="form-input" placeholder="your@gmail.com" style="width:180px">
+                            <input id="smtp-password" type="password" class="form-input" placeholder="App password"  style="width:140px">
+                        </div>
+                        <button id="btn-send-single" class="btn btn-primary">📨 Send Email</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── BULK EMAIL ─────────────────────────────────────────────────── -->
+    <section id="bulk-email" class="tab-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Bulk Email</h1>
+                <p class="page-subtitle">Upload a CSV/Excel and send personalised AI emails at scale</p>
+            </div>
+            <span id="flash-bulk" class="flash-message"></span>
+        </div>
+
+        <div class="bulk-layout">
+            <!-- Upload -->
+            <div class="card">
+                <h3>1. Upload Recipients</h3>
+                <div id="bulk-upload-area" class="upload-area">
+                    <div class="upload-icon">📂</div>
+                    <p>Click to browse or drag-and-drop a <strong>.csv</strong> or <strong>.xlsx</strong> file</p>
+                    <p style="font-size:13px;color:var(--text-secondary)">Expected columns: name, email, company…</p>
+                    <span id="upload-status"></span>
+                </div>
+                <div id="bulk-data-preview" style="margin-top:16px;overflow-x:auto"></div>
+            </div>
+
+            <!-- Compose -->
+            <div class="card">
+                <h3>2. Compose</h3>
+                <div class="toggle-group">
+                    <button class="toggle-btn active" data-mode="single">Single Purpose</button>
+                    <button class="toggle-btn"        data-mode="per">Per-Recipient</button>
+                </div>
+
+                <div id="single-purpose-section">
+                    <div class="form-group">
+                        <label class="form-label">Common Email Purpose</label>
+                        <textarea id="bulk-common-purpose" class="form-input" rows="3"
+                            placeholder="E.g. Invite them to our webinar on…"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Subject Template (use {{name}}, {{company}})</label>
+                        <input id="bulk-subject-template" type="text" class="form-input"
+                            placeholder="Hi {{name}}, exclusive invite from…">
+                    </div>
+                </div>
+
+                <div id="per-recipient-section" style="display:none">
+                    <p style="color:var(--text-secondary);font-size:13px">
+                        Custom purpose per recipient — ensure your CSV has a <code>purpose</code> column.
+                    </p>
+                    <div id="custom-fields-container" class="custom-fields-grid"></div>
+                </div>
+
+                <!-- AI + SMTP row -->
+                <div class="bulk-settings-row">
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Delay (seconds)</label>
+                        <input id="email-delay-seconds" type="number" class="form-input"
+                            value="2" min="0" max="60">
+                    </div>
+                    <div class="form-group checkbox-align">
+                        <label>
+                            <input id="bulk-dry-run" type="checkbox"> Dry run (no actual send)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bulk-sending-actions" style="display:flex;gap:12px;flex-wrap:wrap">
+                    <button id="btn-bulk-preview"  class="btn btn-secondary">👁 Preview First 5</button>
+                    <button id="btn-bulk-generate" class="btn btn-primary">✦ Generate All</button>
+                    <button id="btn-bulk-send-all" class="btn btn-primary" style="margin-left:auto">📨 Send All</button>
+                </div>
+
+                <!-- Progress bar -->
+                <div style="margin-top:16px">
+                    <div class="progress-header">
+                        <span style="font-size:13px;font-weight:700">Progress</span>
+                        <span id="bulk-progress-text" style="font-size:13px;color:var(--text-secondary)">0/0 (0%)</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="bulk-progress-bar" class="progress-bar-fill" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval workflow -->
+            <div id="approval-section" class="card" style="display:none">
+                <div class="approval-header">
+                    <h3>3. Review &amp; Approve</h3>
+                    <span id="approval-counter" class="badge">0/0</span>
+                </div>
+
+                <div class="approval-grid">
+                    <div class="recipient-meta-box">
+                        <h4>Recipient</h4>
+                        <p class="meta-row"><strong>To:</strong> <span id="approval-to">—</span></p>
+                        <p class="meta-row"><strong>Subject:</strong> <span id="approval-subject">—</span></p>
+                    </div>
+                    <div class="approval-editor-box">
+                        <label class="form-label">Email Body (editable)</label>
+                        <textarea id="approval-body-editor" class="form-input" rows="12"></textarea>
+                        <div class="approval-actions">
+                            <button id="btn-approve-send"  class="btn btn-primary">✔ Approve &amp; Next</button>
+                            <button id="btn-approve-skip"  class="btn btn-secondary">⏭ Skip</button>
+                            <button id="btn-approve-edit"  class="btn btn-secondary">✏ Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── TEMPLATES ─────────────────────────────────────────────────── -->
+    <section id="templates" class="tab-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Templates</h1>
+                <p class="page-subtitle">Save, edit and reuse email templates</p>
+            </div>
+            <button id="btn-new-template" class="btn btn-primary">+ New Template</button>
+        </div>
+
+        <!-- New/Edit form (hidden by default) -->
+        <div id="template-form-section" class="card" style="display:none;margin-bottom:24px">
+            <h3 id="template-form-title">New Template</h3>
+            <div class="form-group">
+                <label class="form-label">Name *</label>
+                <input id="template-form-name" type="text" class="form-input" placeholder="Follow-up introduction">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <input id="template-form-category" type="text" class="form-input" placeholder="Sales, HR, General…">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Body (use {{name}}, {{company}} etc.)</label>
+                <textarea id="template-form-body" class="form-input" rows="10"
+                    placeholder="Hi {{name}}, I wanted to reach out…"></textarea>
+            </div>
+            <div class="template-form-actions">
+                <button id="btn-cancel-template-form" class="btn btn-secondary">Cancel</button>
+                <button id="btn-save-template-form"   class="btn btn-primary">Save Template</button>
+            </div>
+        </div>
+
+        <div class="templates-list-container">
+            <h3>Saved Templates</h3>
+            <div id="templates-grid" class="templates-grid">
+                <p style="color:var(--text-secondary)">Loading…</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── HISTORY ────────────────────────────────────────────────────── -->
+    <section id="history" class="tab-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">History</h1>
+                <p class="page-subtitle">Your recent generated and sent emails</p>
+            </div>
+            <button id="btn-clear-history" class="btn btn-danger btn-sm">Clear All</button>
+        </div>
+        <div id="history-list" class="history-list">
+            <p style="color:var(--text-secondary)">Loading…</p>
+        </div>
+    </section>
+
+    <!-- ── PROFILE ────────────────────────────────────────────────────── -->
+    <section id="profile" class="tab-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">My Profile</h1>
+                <p class="page-subtitle">Default sender identity for all emails</p>
+            </div>
+            <span id="flash-profile" class="flash-message"></span>
+        </div>
+
+        <div class="card">
+            <div class="profile-grid">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input id="profile-name"    type="text"  class="form-input" placeholder="Jane Smith">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input id="profile-email"   type="email" class="form-input" placeholder="jane@company.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input id="profile-company" type="text"  class="form-input" placeholder="Acme Corp">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role / Title</label>
+                    <input id="profile-role"    type="text"  class="form-input" placeholder="Product Manager">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Website</label>
+                    <input id="profile-website" type="url"   class="form-input" placeholder="https://…">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Signature</label>
+                <textarea id="profile-signature" class="form-input" rows="4"
+                    placeholder="Best regards,&#10;Jane Smith | Acme Corp"></textarea>
+            </div>
+            <div class="profile-actions">
+                <button id="btn-save-profile" class="btn btn-primary">Save Profile</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SETTINGS ───────────────────────────────────────────────────── -->
+    <section id="settings" class="tab-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Settings</h1>
+                <p class="page-subtitle">Configure SMTP, AI providers and appearance</p>
+            </div>
+            <span id="flash-settings" class="flash-message"></span>
+        </div>
+
+        <!-- API Keys status (NEW) -->
+        <div class="card settings-card">
+            <h3>🔑 API Keys</h3>
+            <p style="color:var(--text-secondary);font-size:13px">
+                Keys are read from your <strong>.env</strong> file. Edit it and restart the app to apply changes.
+            </p>
+            <div id="api-key-status-grid" class="api-key-status-grid"></div>
+            <div style="margin-top:16px;padding:12px 16px;background:var(--bg-tertiary);border-radius:8px;font-size:12px;font-family:monospace;color:var(--text-secondary);">
+                GEMINI_API_KEY=...&nbsp;&nbsp;GROQ_API_KEY=...&nbsp;&nbsp;OPENAI_API_KEY=...<br>
+                CLAUDE_API_KEY=...&nbsp;&nbsp;DEEPSEEK_API_KEY=...&nbsp;&nbsp;OPENROUTER_API_KEY=...
+            </div>
+        </div>
+
+        <!-- Themes -->
+        <div class="card settings-card">
+            <h3>🎨 Themes</h3>
+            <p style="color:var(--text-secondary);font-size:13px">Click a theme to apply it immediately.</p>
+            <div class="themes-grid">
+                <div class="theme-card" data-theme-val="obsidian-dark">
+                    <div class="theme-preview obsidian-dark-preview">
+                        <div class="side"></div>
+                        <div class="main"><div class="accent"></div></div>
+                    </div>
+                    <h4>Obsidian Dark</h4>
+                    <p>Midnight productivity</p>
+                </div>
+                <div class="theme-card" data-theme-val="cyberpunk-glass">
+                    <div class="theme-preview cyberpunk-glass-preview">
+                        <div class="side"></div>
+                        <div class="main"><div class="accent"></div></div>
+                    </div>
+                    <h4>Cyberpunk Glass</h4>
+                    <p>Neon & electric</p>
+                </div>
+                <div class="theme-card" data-theme-val="emerald-forest">
+                    <div class="theme-preview emerald-forest-preview">
+                        <div class="side"></div>
+                        <div class="main"><div class="accent"></div></div>
+                    </div>
+                    <h4>Emerald Forest</h4>
+                    <p>Nature-inspired focus</p>
+                </div>
+                <div class="theme-card" data-theme-val="sunset-glow">
+                    <div class="theme-preview sunset-glow-preview">
+                        <div class="side"></div>
+                        <div class="main"><div class="accent"></div></div>
+                    </div>
+                    <h4>Sunset Glow</h4>
+                    <p>Warm & energetic</p>
+                </div>
+                <div class="theme-card" data-theme-val="classic-slate">
+                    <div class="theme-preview classic-slate-preview">
+                        <div class="side"></div>
+                        <div class="main"><div class="accent"></div></div>
+                    </div>
+                    <h4>Classic Slate</h4>
+                    <p>Clean light mode</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SMTP -->
+        <div class="card settings-card">
+            <h3>📮 SMTP Settings</h3>
+            <div class="profile-grid">
+                <div class="form-group">
+                    <label class="form-label">Provider</label>
+                    <select id="smtp-provider-settings" class="form-input form-select">
+                        <option value="Gmail">Gmail</option>
+                        <option value="Outlook">Outlook</option>
+                        <option value="Yahoo">Yahoo</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input id="smtp-email-settings"    type="email"    class="form-input" placeholder="your@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">App Password</label>
+                    <input id="smtp-password-settings" type="password" class="form-input" placeholder="••••••••••">
+                </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:8px">
+                <button id="btn-test-smtp" class="btn btn-secondary">🔌 Test Connection</button>
+            </div>
+        </div>
+
+        <!-- AI Defaults -->
+        <div class="card settings-card">
+            <h3>🤖 AI Defaults</h3>
+            <div class="profile-grid">
+                <div class="form-group">
+                    <label class="form-label">Default Provider</label>
+                    <!-- Options injected by buildProviderDropdowns() in core.js -->
+                    <select id="settings-default-provider" class="form-input form-select"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Default Model</label>
+                    <select id="settings-default-model" class="form-input form-select"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Custom Model Override</label>
+                    <input id="settings-model-override" type="text" class="form-input"
+                        placeholder="e.g. gpt-4o (overrides dropdown if set)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Default Email Purpose</label>
+                    <input id="settings-purpose" type="text" class="form-input"
+                        placeholder="Schedule a discovery call…">
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+    </section>
+
+</main>
+
+<!-- ── JS Modules ──────────────────────────────────────────────────────── -->
+<script src="js/core.js"></script>
+<script src="js/single_email.js"></script>
+<script src="js/bulk_email.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/profile_settings.js"></script>
+</body>
+</html>

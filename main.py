@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from ui.app import run_app
+from ui_webview.app import run_app
 
 # Load environment variables from .env and then .env.local (local overrides)
 load_dotenv(dotenv_path=".env", override=False)

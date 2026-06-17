@@ -178,3 +178,86 @@ class GeminiClient:
                 body_lines += ["", "Hakkımda:", profile_text]
             body_lines += ["", "Saygılarımla,", ""]
             return GeneratedEmail(subject=subject, body="\n".join(body_lines).strip())
+
+    def refine_email(
+        self,
+        subject: str,
+        body: str,
+        instruction: str,
+        tone: str = "Professional",
+        language: str = "Turkish",
+        profile: Optional[Dict[str, Any]] = None,
+    ) -> GeneratedEmail:
+        if not instruction:
+            return GeneratedEmail(subject=subject, body=body)
+
+        profile_text = ""
+        if profile:
+            extras = [f"{k.capitalize()}: {v}" for k, v in profile.items() if v]
+            if extras:
+                profile_text = "\n".join(extras)
+
+        if not self._configured:
+            refined_body = f"{body}\n\n[Refined with instruction: '{instruction}']"
+            return GeneratedEmail(subject=subject, body=refined_body)
+
+        prompt = textwrap.dedent(
+            f"""
+            You are a professional email writing assistant. Refine/rewrite the following email according to the user's instruction.
+            
+            ORIGINAL SUBJECT: {subject}
+            ORIGINAL BODY:
+            {body}
+            
+            INSTRUCTION: {instruction}
+            TONE: {tone}
+            LANGUAGE: {language}
+            AUTHOR PROFILE:
+            {profile_text}
+            
+            REQUIREMENTS:
+            - Keep the tone {tone.lower()} and language {language} unless the instruction asks otherwise
+            - Incorporate the author profile info naturally if required by the instruction
+            - Modify both the subject and the body based on the instruction
+            - The output should be a complete, ready-to-send email
+            
+            Return ONLY a JSON object with these exact keys:
+            {{
+                "subject": "Refined email subject line",
+                "body": "Complete refined email body with proper formatting"
+            }}
+            """
+        ).strip()
+
+        try:
+            contents = [
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_text(text=prompt),
+                    ],
+                ),
+            ]
+            generate_content_config = types.GenerateContentConfig()
+
+            full_text = ""
+            for chunk in self._client.models.generate_content_stream(
+                model=self.model_name,
+                contents=contents,
+                config=generate_content_config,
+            ):
+                full_text += chunk.text or ""
+
+            import json, re
+            match = re.search(r"\{[\s\S]*\}", full_text)
+            if match:
+                data = json.loads(match.group(0))
+                ref_subject = data.get("subject") or subject
+                ref_body = data.get("body") or body
+            else:
+                lines = [l.strip() for l in full_text.splitlines() if l.strip()]
+                ref_subject = lines[0][:120] if lines else subject
+                ref_body = "\n".join(lines[1:]) if len(lines) > 1 else full_text
+            return GeneratedEmail(subject=ref_subject, body=ref_body.strip())
+        except Exception:
+            return GeneratedEmail(subject=subject, body=body)

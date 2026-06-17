@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Smart Email Writer - Theme Color Definitions
+   ========================================================================== */
+
+:root[data-theme="obsidian-dark"] {
+    --bg-primary: #0d0f12;
+    --bg-secondary: #161a22;
+    --bg-tertiary: #1f2430;
+    --text-primary: #f0f3f6;
+    --text-secondary: #8b949e;
+    --accent-color: #38bdf8;
+    --accent-hover: #0284c7;
+    --accent-glow: rgba(56, 189, 248, 0.4);
+    --border-color: #30363d;
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    --glass-bg: rgba(22, 26, 34, 0.75);
+    --glass-blur: blur(12px);
+    --success-color: #34d399;
+    --danger-color: #f87171;
+}
+
+:root[data-theme="cyberpunk-glass"] {
+    --bg-primary: #0a0514;
+    --bg-secondary: rgba(26, 15, 46, 0.65);
+    --bg-tertiary: #2a1b4e;
+    --text-primary: #f5f0ff;
+    --text-secondary: #a38fc2;
+    --accent-color: #ff007f;
+    --accent-hover: #e0006c;
+    --accent-glow: rgba(255, 0, 127, 0.5);
+    --border-color: #4a2b82;
+    --card-shadow: 0 8px 32px 0 rgba(255, 0, 127, 0.15);
+    --glass-bg: rgba(20, 10, 35, 0.7);
+    --glass-blur: blur(16px);
+    --success-color: #00f0ff;
+    --danger-color: #ff0055;
+}
+
+:root[data-theme="emerald-forest"] {
+    --bg-primary: #081410;
+    --bg-secondary: #0f241d;
+    --bg-tertiary: #17372d;
+    --text-primary: #e6f7f2;
+    --text-secondary: #7fa89b;
+    --accent-color: #34d399;
+    --accent-hover: #059669;
+    --accent-glow: rgba(52, 211, 153, 0.4);
+    --border-color: #214f40;
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+    --glass-bg: rgba(15, 36, 29, 0.8);
+    --glass-blur: blur(10px);
+    --success-color: #58ffc4;
+    --danger-color: #fca5a5;
+}
+
+:root[data-theme="sunset-glow"] {
+    --bg-primary: #120b18;
+    --bg-secondary: #21122d;
+    --bg-tertiary: #311c42;
+    --text-primary: #faeffc;
+    --text-secondary: #ab95b8;
+    --accent-color: #f97316;
+    --accent-hover: #ea580c;
+    --accent-glow: rgba(249, 115, 22, 0.4);
+    --border-color: #472661;
+    --card-shadow: 0 8px 32px 0 rgba(249, 115, 22, 0.1);
+    --glass-bg: rgba(33, 18, 45, 0.8);
+    --glass-blur: blur(12px);
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+}
+
+:root[data-theme="classic-slate"] {
+    --bg-primary: #f1f5f9;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f8fafc;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --accent-color: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-glow: rgba(37, 99, 235, 0.2);
+    --border-color: #cbd5e1;
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    --glass-bg: #ffffff;
+    --glass-blur: none;
+    --success-color: #16a34a;
+    --danger-color: #dc2626;
+}

@@ -1,0 +1,12 @@
+/* ==========================================================================
+   Smart Email Writer - Main Style Entry Point
+   Imports modular sub-sheets in dependency order:
+     1. Theme variables  → 2. Layout  → 3. Components  → 4. Tab panels
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+@import url('./css/themes.css');
+@import url('./css/layout.css');
+@import url('./css/components.css');
+@import url('./css/tabs.css');

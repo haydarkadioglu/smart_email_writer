@@ -115,3 +115,80 @@ class GroqClient:
         except Exception as e:
             # Surface upstream errors (e.g., 401, 404) for easier debugging in UI
             raise RuntimeError(f"Groq generation failed: {e}")
+
+    def refine_email(
+        self,
+        subject: str,
+        body: str,
+        instruction: str,
+        tone: str = "Professional",
+        language: str = "Turkish",
+        profile: Optional[Dict[str, Any]] = None,
+    ) -> GeneratedEmail:
+        if not self._configured:
+            raise RuntimeError(self._not_configured_message())
+
+        if not instruction:
+            return GeneratedEmail(subject=subject, body=body)
+
+        profile_text = ""
+        if profile:
+            lines = []
+            for k, v in profile.items():
+                if v:
+                    lines.append(f"{k.capitalize()}: {v}")
+            profile_text = "\n".join(lines)
+
+        system_prompt = textwrap.dedent(
+            f"""
+            You are a professional email writing assistant. Refine/rewrite the following email according to the user's instruction.
+            
+            TONE: {tone}
+            LANGUAGE: {language}
+            
+            REQUIREMENTS:
+            - Keep the tone {tone.lower()} and language {language} unless the instruction asks otherwise
+            - Modify both the subject and the body based on the instruction
+            - The output should be a complete, ready-to-send email
+            - Return ONLY JSON with keys subject, body.
+            """
+        ).strip()
+
+        user_prompt = textwrap.dedent(
+            f"""
+            ORIGINAL SUBJECT: {subject}
+            ORIGINAL BODY:
+            {body}
+            
+            INSTRUCTION: {instruction}
+            AUTHOR PROFILE:\n{profile_text}
+            """
+        ).strip()
+
+        try:
+            chat = self._client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.7,
+                stream=False,
+            )
+            text = chat.choices[0].message.content if chat and chat.choices else ""
+            match = None
+            try:
+                match = json.loads(text)
+            except Exception:
+                pass
+            if isinstance(match, dict):
+                ref_subject = match.get("subject") or subject
+                ref_body = match.get("body") or text
+                return GeneratedEmail(subject=ref_subject, body=(ref_body or "").strip())
+            # Fallback heuristic
+            lines = [l.strip() for l in text.splitlines() if l.strip()]
+            ref_subject = lines[0][:120] if lines else subject
+            ref_body = "\n".join(lines[1:]) if len(lines) > 1 else text
+            return GeneratedEmail(subject=ref_subject, body=(ref_body or "").strip())
+        except Exception as e:
+            raise RuntimeError(f"Groq refinement failed: {e}")
