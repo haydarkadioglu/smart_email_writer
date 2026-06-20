@@ -107,9 +107,7 @@ def run_app():
     )
     api.set_window(window)
 
-    # Set window icon on platforms that support it dynamically
-    icon_path = str(Path(__file__).parent / "templates" / "app_icon.png")
-    webview.start(debug=False, icon=icon_path)
+    webview.start(debug=False)
 
 
 if __name__ == "__main__":
