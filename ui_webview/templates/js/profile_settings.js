@@ -108,6 +108,12 @@ async function saveSettings() {
         default_purpose:     getVal('settings-purpose'),
         model_override:      modelOverride,
         theme:               document.documentElement.getAttribute('data-theme'),
+        api_key_gemini:      getVal('settings-api-key-gemini'),
+        api_key_groq:        getVal('settings-api-key-groq'),
+        api_key_openai:      getVal('settings-api-key-openai'),
+        api_key_claude:      getVal('settings-api-key-claude'),
+        api_key_deepseek:    getVal('settings-api-key-deepseek'),
+        api_key_openrouter:  getVal('settings-api-key-openrouter'),
     };
     payload[provider + "_model"] = model;
 
@@ -115,7 +121,16 @@ async function saveSettings() {
     setBtnLoading(btn, false);
     showFlash('flash-settings', result.success ? '✔ Settings saved' : '✘ ' + result.error, !result.success);
     if (result.success) {
-        if (appConfig) appConfig.settings = { ...appConfig.settings, ...result.settings };
+        if (appConfig) {
+            appConfig.settings = { ...appConfig.settings, ...result.settings };
+            try {
+                const latestConfig = await pywebview.api.get_config();
+                appConfig.api_keys_configured = latestConfig.api_keys_configured;
+                renderApiKeyStatus();
+            } catch (err) {
+                console.error("Failed to refresh API status badges:", err);
+            }
+        }
     }
 }
 

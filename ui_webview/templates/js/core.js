@@ -143,6 +143,14 @@ function populateConfigDefaults() {
         setVal('single-purpose', s.default_purpose || "");
     }
 
+    // Restore saved API keys
+    setVal('settings-api-key-gemini',     s.api_key_gemini || "");
+    setVal('settings-api-key-groq',       s.api_key_groq || "");
+    setVal('settings-api-key-openai',     s.api_key_openai || "");
+    setVal('settings-api-key-claude',     s.api_key_claude || "");
+    setVal('settings-api-key-deepseek',   s.api_key_deepseek || "");
+    setVal('settings-api-key-openrouter', s.api_key_openrouter || "");
+
     // Restore saved provider selections
     setVal('settings-default-provider', s.ai_provider || "gemini");
     setVal('settings-model-override', s.model_override || "");
