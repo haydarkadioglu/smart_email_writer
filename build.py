@@ -37,6 +37,7 @@ def run():
         "--noconsole",
         "--onefile",
         "--clean",
+        "--icon=app_icon.ico",
         f"--add-data={add_data_flag}",
         "--exclude-module=PyQt5",
         "--exclude-module=PyQt6",
