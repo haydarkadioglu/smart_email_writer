@@ -95,18 +95,15 @@ def apply_dark_titlebar(window) -> None:
     try:
         import ctypes
         from ctypes import wintypes
-        DWMWA_USE_IMMERSIVE_DARK_MODE = 20
         dwmapi = ctypes.WinDLL("dwmapi", use_last_error=True)
         # get HWND pointer
         hwnd_val = window.native.Handle.ToInt32()
         hwnd = wintypes.HWND(hwnd_val)
         value = ctypes.c_int(1)
-        dwmapi.DwmSetWindowAttribute(
-            hwnd,
-            DWMWA_USE_IMMERSIVE_DARK_MODE,
-            ctypes.byref(value),
-            ctypes.sizeof(value)
-        )
+        # Try DWMWA_USE_IMMERSIVE_DARK_MODE for Windows 11 and newer Windows 10 (20)
+        dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
+        # Try DWMWA_USE_IMMERSIVE_DARK_MODE_V2 for older Windows 10 (19)
+        dwmapi.DwmSetWindowAttribute(hwnd, 19, ctypes.byref(value), ctypes.sizeof(value))
     except Exception as e:
         print(f"[Warning] Failed to set immersive dark mode title bar: {e}")
 

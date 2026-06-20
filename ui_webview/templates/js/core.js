@@ -143,13 +143,36 @@ function populateConfigDefaults() {
         setVal('single-purpose', s.default_purpose || "");
     }
 
-    // Restore saved API keys
-    setVal('settings-api-key-gemini',     s.api_key_gemini || "");
-    setVal('settings-api-key-groq',       s.api_key_groq || "");
-    setVal('settings-api-key-openai',     s.api_key_openai || "");
-    setVal('settings-api-key-claude',     s.api_key_claude || "");
-    setVal('settings-api-key-deepseek',   s.api_key_deepseek || "");
-    setVal('settings-api-key-openrouter', s.api_key_openrouter || "");
+    // Restore saved API keys locally
+    window.localApiKeys = {
+        gemini: s.api_key_gemini || "",
+        groq: s.api_key_groq || "",
+        openai: s.api_key_openai || "",
+        claude: s.api_key_claude || "",
+        deepseek: s.api_key_deepseek || "",
+        openrouter: s.api_key_openrouter || ""
+    };
+    
+    const apiKeyProvider = document.getElementById('settings-api-key-provider');
+    const apiKeyInput = document.getElementById('settings-api-key-input');
+    const apiKeyLabel = document.getElementById('settings-api-key-label');
+    
+    if (apiKeyProvider && apiKeyInput) {
+        apiKeyProvider.value = s.ai_provider || "gemini";
+        
+        const updateInput = () => {
+            apiKeyLabel.innerText = apiKeyProvider.options[apiKeyProvider.selectedIndex].text + " API Key";
+            apiKeyInput.value = window.localApiKeys[apiKeyProvider.value] || "";
+        };
+        
+        updateInput();
+        
+        apiKeyProvider.addEventListener('change', updateInput);
+        
+        apiKeyInput.addEventListener('input', () => {
+            window.localApiKeys[apiKeyProvider.value] = apiKeyInput.value;
+        });
+    }
 
     // Restore saved provider selections
     setVal('settings-default-provider', s.ai_provider || "gemini");

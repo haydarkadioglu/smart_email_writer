@@ -525,28 +525,19 @@
             
             <div class="profile-grid" style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
                 <div class="form-group">
-                    <label class="form-label">Gemini API Key</label>
-                    <input id="settings-api-key-gemini" type="password" class="form-input" placeholder="Enter Gemini API Key (or empty to use .env)">
+                    <label class="form-label">Provider to Configure</label>
+                    <select id="settings-api-key-provider" class="form-input form-select">
+                        <option value="gemini">Gemini</option>
+                        <option value="groq">Groq</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="claude">Claude</option>
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="openrouter">OpenRouter</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Groq API Key</label>
-                    <input id="settings-api-key-groq" type="password" class="form-input" placeholder="Enter Groq API Key (or empty to use .env)">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">OpenAI API Key</label>
-                    <input id="settings-api-key-openai" type="password" class="form-input" placeholder="Enter OpenAI API Key (or empty to use .env)">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Claude API Key</label>
-                    <input id="settings-api-key-claude" type="password" class="form-input" placeholder="Enter Claude API Key (or empty to use .env)">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">DeepSeek API Key</label>
-                    <input id="settings-api-key-deepseek" type="password" class="form-input" placeholder="Enter DeepSeek API Key (or empty to use .env)">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">OpenRouter API Key</label>
-                    <input id="settings-api-key-openrouter" type="password" class="form-input" placeholder="Enter OpenRouter API Key (or empty to use .env)">
+                    <label class="form-label" id="settings-api-key-label">Gemini API Key</label>
+                    <input id="settings-api-key-input" type="password" class="form-input" placeholder="Enter API Key (or empty to use .env)">
                 </div>
             </div>
         </div>

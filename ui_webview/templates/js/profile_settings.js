@@ -108,12 +108,12 @@ async function saveSettings() {
         default_purpose:     getVal('settings-purpose'),
         model_override:      modelOverride,
         theme:               document.documentElement.getAttribute('data-theme'),
-        api_key_gemini:      getVal('settings-api-key-gemini'),
-        api_key_groq:        getVal('settings-api-key-groq'),
-        api_key_openai:      getVal('settings-api-key-openai'),
-        api_key_claude:      getVal('settings-api-key-claude'),
-        api_key_deepseek:    getVal('settings-api-key-deepseek'),
-        api_key_openrouter:  getVal('settings-api-key-openrouter'),
+        api_key_gemini:      window.localApiKeys?.gemini || "",
+        api_key_groq:        window.localApiKeys?.groq || "",
+        api_key_openai:      window.localApiKeys?.openai || "",
+        api_key_claude:      window.localApiKeys?.claude || "",
+        api_key_deepseek:    window.localApiKeys?.deepseek || "",
+        api_key_openrouter:  window.localApiKeys?.openrouter || "",
     };
     payload[provider + "_model"] = model;
 
