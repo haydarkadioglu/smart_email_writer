@@ -129,7 +129,9 @@
                 <div class="card editor-card">
                     <div class="editor-header">
                         <h3>Email Draft</h3>
-                        <div style="display:flex;gap:8px">
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <button id="btn-undo" class="btn btn-sm btn-secondary" title="Undo (Ctrl+Z)" disabled>↩ Undo</button>
+                            <button id="btn-redo" class="btn btn-sm btn-secondary" title="Redo" disabled>↪ Redo</button>
                             <button id="btn-copy-draft"             class="btn btn-sm btn-secondary">📋 Copy</button>
                             <button id="btn-save-template-single"   class="btn btn-sm btn-secondary">💾 Save Template</button>
                             <span id="flash-copy" class="flash-message"></span>
@@ -175,13 +177,50 @@
 
                 <!-- Attachments & Send -->
                 <div class="card sender-card">
-                    <h3>Attachments & Send</h3>
+                    <h3>Attachments &amp; Send</h3>
                     <button id="btn-attach-file" class="btn btn-sm btn-secondary">📎 Add Attachment</button>
                     <div id="attachment-list" class="attachment-list"></div>
 
                     <div class="sender-actions">
                         <button id="btn-send-single" class="btn btn-primary">📨 Send Email</button>
                     </div>
+                </div>
+
+                <!-- AI Tone Analysis -->
+                <div class="card" id="tone-analysis-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <h3 style="margin:0">🎭 Tone Analysis</h3>
+                        <button id="btn-analyze-tone" class="btn btn-sm btn-secondary">✦ Analyze</button>
+                    </div>
+                    <div id="tone-results" style="display:none">
+                        <div class="tone-metric">
+                            <div class="tone-label-row"><span>Formality</span><span id="tone-formality-val">—</span></div>
+                            <div class="tone-bar-track"><div id="tone-formality-bar" class="tone-bar-fill" style="width:0%"></div></div>
+                        </div>
+                        <div class="tone-metric">
+                            <div class="tone-label-row"><span>Friendliness</span><span id="tone-friendly-val">—</span></div>
+                            <div class="tone-bar-track"><div id="tone-friendly-bar" class="tone-bar-fill friendly" style="width:0%"></div></div>
+                        </div>
+                        <div class="tone-metric">
+                            <div class="tone-label-row"><span>Urgency</span><span id="tone-urgency-val">—</span></div>
+                            <div class="tone-bar-track"><div id="tone-urgency-bar" class="tone-bar-fill urgency" style="width:0%"></div></div>
+                        </div>
+                        <div class="tone-metric">
+                            <div class="tone-label-row"><span>Clarity</span><span id="tone-clarity-val">—</span></div>
+                            <div class="tone-bar-track"><div id="tone-clarity-bar" class="tone-bar-fill clarity" style="width:0%"></div></div>
+                        </div>
+                        <div id="tone-advice" style="margin-top:10px;font-size:13px;color:var(--text-secondary);padding:8px 12px;background:var(--bg-tertiary);border-radius:8px;"></div>
+                    </div>
+                    <p id="tone-placeholder" style="color:var(--text-secondary);font-size:13px;margin:0">Generate an email draft first, then click Analyze.</p>
+                </div>
+
+                <!-- SMTP Debug Console -->
+                <div class="card" id="smtp-console-single" style="display:none">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <h3 style="margin:0;font-size:14px">🔌 SMTP Console</h3>
+                        <button onclick="document.getElementById('smtp-log-single').innerHTML='';" class="btn btn-sm btn-secondary" style="font-size:11px;padding:2px 8px">Clear</button>
+                    </div>
+                    <div id="smtp-log-single" class="smtp-log-box"></div>
                 </div>
             </div>
         </div>
@@ -208,6 +247,32 @@
                     <span id="upload-status"></span>
                 </div>
                 <div id="bulk-data-preview" style="margin-top:16px;overflow-x:auto"></div>
+
+                <!-- Column Mapping Panel -->
+                <div id="bulk-mapping-section" style="display:none;margin-top:16px">
+                    <h4 style="margin-bottom:10px;color:var(--text-primary)">🗺 Column Mapping</h4>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Map your CSV columns to the required fields:</p>
+                    <div class="profile-grid">
+                        <div class="form-group">
+                            <label class="form-label">Recipient Name Column</label>
+                            <select id="map-name" class="form-input form-select"><option value="">— select —</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Recipient Email Column</label>
+                            <select id="map-email" class="form-input form-select"><option value="">— select —</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Company Column (optional)</label>
+                            <select id="map-company" class="form-input form-select"><option value="">(none)</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Per-Recipient Purpose Column (optional)</label>
+                            <select id="map-purpose" class="form-input form-select"><option value="">(none)</option></select>
+                        </div>
+                    </div>
+                    <button id="btn-confirm-mapping" class="btn btn-primary btn-sm" style="margin-top:4px">✔ Confirm Mapping</button>
+                    <span id="flash-mapping" class="flash-message" style="margin-left:12px"></span>
+                </div>
             </div>
 
             <!-- Compose -->
@@ -293,6 +358,15 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- SMTP Console (Bulk) -->
+            <div class="card" id="smtp-console-bulk" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <h3 style="margin:0;font-size:14px">🔌 SMTP Console</h3>
+                    <button onclick="document.getElementById('smtp-log-bulk').innerHTML='';" class="btn btn-sm btn-secondary" style="font-size:11px;padding:2px 8px">Clear</button>
+                </div>
+                <div id="smtp-log-bulk" class="smtp-log-box"></div>
             </div>
         </div>
     </section>
@@ -556,6 +630,15 @@
         </div>
 
         <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+
+        <!-- AI Cost / Usage link -->
+        <div style="margin-top:24px;padding:16px;background:var(--bg-tertiary);border-radius:12px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-weight:600;color:var(--text-primary)">📊 AI Cost & Token Usage</div>
+                <div style="font-size:13px;color:var(--text-secondary)">View estimated token consumption and costs per session.</div>
+            </div>
+            <button id="btn-open-usage" class="btn btn-secondary">View Stats →</button>
+        </div>
     </section>
 
 </main>
