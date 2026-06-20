@@ -132,7 +132,7 @@ def run_app():
     api.set_window(window)
 
     # Register the event to apply immersive dark title bar
-    window.events.before_show += apply_dark_titlebar
+    window.events.shown += lambda: apply_dark_titlebar(window)
 
     webview.start(debug=False)
 
