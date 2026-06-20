@@ -462,13 +462,24 @@ class BulkMixin:
             smtp_email = payload.get("smtp_email", "")
             smtp_password = payload.get("smtp_password", "")
             delay_seconds = float(payload.get("delay_seconds", 2.0))
+            log_id = payload.get("log_id", "bulk")
+
+            def js_log(msg: str):
+                try:
+                    safe = msg.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ")
+                    if hasattr(self, 'window') and self.window:
+                        self.window.evaluate_js(f"appendSmtpLog('{log_id}', '{safe}')")
+                except Exception:
+                    pass
 
             sent = 0
             total = len(emails)
+            js_log(f"[BULK] Starting: {total} emails via {smtp_provider}")
             for i, email_data in enumerate(emails):
                 recipient = email_data.get("to")
                 subject = email_data.get("subject")
                 body = email_data.get("body")
+                js_log(f"[{i+1}/{total}] → {recipient}")
                 
                 # Send single email
                 res = self.send_single_email(
@@ -479,14 +490,19 @@ class BulkMixin:
                     subject=subject,
                     body=body,
                     attachment_paths=[],
-                    log_to_excel=True
+                    log_to_excel=True,
+                    log_cb=None  # already using bulk log
                 )
                 if res.get("success"):
                     sent += 1
+                    js_log(f"  ✔ Sent to {recipient}")
+                else:
+                    js_log(f"  ✘ Failed: {res.get('error', '')[:80]}")
                 
                 if delay_seconds > 0 and i < total - 1:
                     time.sleep(delay_seconds)
             
+            js_log(f"[BULK] Done: {sent}/{total} sent successfully")
             return {
                 "success": True,
                 "sent": sent,
@@ -494,3 +510,4 @@ class BulkMixin:
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
+

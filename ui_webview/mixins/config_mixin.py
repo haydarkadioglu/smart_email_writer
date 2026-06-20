@@ -1,4 +1,6 @@
 import os
+import json
+from pathlib import Path
 from typing import Dict, Any
 
 from clients.openai_client import OpenAIClient
@@ -61,3 +63,31 @@ class ConfigMixin:
             self.settings_store.save(settings)
             
         return {"success": True}
+
+    def get_usage_stats(self) -> Dict[str, Any]:
+        """Return aggregated AI token usage from config/usage_logs.json."""
+        try:
+            log_path = Path("config") / "usage_logs.json"
+            if not log_path.exists():
+                return {"success": True, "logs": [], "total_cost": 0.0, "total_tokens": 0}
+            logs = json.loads(log_path.read_text(encoding="utf-8"))
+            total_cost   = sum(e.get("cost_usd", 0) for e in logs)
+            total_tokens = sum(e.get("tokens_in", 0) + e.get("tokens_out", 0) for e in logs)
+            return {
+                "success":      True,
+                "logs":         list(reversed(logs[-50:])),  # last 50, newest first
+                "total_cost":   round(total_cost, 6),
+                "total_tokens": total_tokens,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def clear_usage_logs(self) -> Dict[str, Any]:
+        """Delete all usage log entries."""
+        try:
+            log_path = Path("config") / "usage_logs.json"
+            if log_path.exists():
+                log_path.write_text("[]", encoding="utf-8")
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
