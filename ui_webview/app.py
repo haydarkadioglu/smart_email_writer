@@ -87,6 +87,30 @@ class WebViewAPI(ConfigMixin, TemplateMixin, HistoryMixin, EmailMixin, BulkMixin
         ]
 
 
+def apply_dark_titlebar(window) -> None:
+    """Apply native Immersive Dark Mode to Windows title bar using Win32 API."""
+    import sys
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        from ctypes import wintypes
+        DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+        dwmapi = ctypes.WinDLL("dwmapi", use_last_error=True)
+        # get HWND pointer
+        hwnd_val = window.native.Handle.ToInt32()
+        hwnd = wintypes.HWND(hwnd_val)
+        value = ctypes.c_int(1)
+        dwmapi.DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_USE_IMMERSIVE_DARK_MODE,
+            ctypes.byref(value),
+            ctypes.sizeof(value)
+        )
+    except Exception as e:
+        print(f"[Warning] Failed to set immersive dark mode title bar: {e}")
+
+
 def run_app():
     current_dir    = Path(__file__).parent
     index_path     = current_dir / "templates" / "index.html"
@@ -106,6 +130,9 @@ def run_app():
         background_color = '#0d0f12',
     )
     api.set_window(window)
+
+    # Register the event to apply immersive dark title bar
+    window.events.before_show += apply_dark_titlebar
 
     webview.start(debug=False)
 
