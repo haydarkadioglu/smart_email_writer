@@ -2,6 +2,51 @@
    single_email.js  –  Single Email tab logic
    ========================================================================== */
 
+// ── Undo/Redo Stack ───────────────────────────────────────────────────────
+const editorHistory = [];      // stack of {subject, draft} snapshots
+let   editorHistoryIdx = -1;   // current position in the stack
+const MAX_HISTORY = 50;
+
+function pushEditorSnapshot() {
+    const snap = {
+        subject: getVal('email-subject'),
+        draft:   getVal('draft-output'),
+    };
+    // Trim future states if user typed after undo
+    editorHistory.splice(editorHistoryIdx + 1);
+    editorHistory.push(snap);
+    if (editorHistory.length > MAX_HISTORY) editorHistory.shift();
+    editorHistoryIdx = editorHistory.length - 1;
+    updateUndoRedoBtns();
+}
+
+function updateUndoRedoBtns() {
+    const undoBtn = document.getElementById('btn-undo');
+    const redoBtn = document.getElementById('btn-redo');
+    if (undoBtn) undoBtn.disabled = editorHistoryIdx <= 0;
+    if (redoBtn) redoBtn.disabled = editorHistoryIdx >= editorHistory.length - 1;
+}
+
+function handleUndo() {
+    if (editorHistoryIdx <= 0) return;
+    editorHistoryIdx--;
+    const snap = editorHistory[editorHistoryIdx];
+    document.getElementById('draft-output').value  = snap.draft;
+    document.getElementById('email-subject').value = snap.subject;
+    updateUndoRedoBtns();
+    runEditorAnalysis();
+}
+
+function handleRedo() {
+    if (editorHistoryIdx >= editorHistory.length - 1) return;
+    editorHistoryIdx++;
+    const snap = editorHistory[editorHistoryIdx];
+    document.getElementById('draft-output').value  = snap.draft;
+    document.getElementById('email-subject').value = snap.subject;
+    updateUndoRedoBtns();
+    runEditorAnalysis();
+}
+
 const DEFAULT_PROMPT_TEMPLATES = [
     { id: "collab", title: "Collaboration / Discovery Call", prompt: "Schedule a brief 10-minute discovery call to discuss potential collaboration and partnership opportunities." },
     { id: "job", title: "Job Application / CV Outreach", prompt: "Reach out to express interest in open positions and discuss how my skills and experience align with the team's needs." },
@@ -102,9 +147,12 @@ function bindSingleEmailEvents() {
     document.getElementById('btn-refine').addEventListener('click', handleRefine);
     document.getElementById('btn-send-single').addEventListener('click', handleSendSingle);
     document.getElementById('btn-attach-file').addEventListener('click', handleAttach);
-    document.getElementById('draft-output').addEventListener('input', runEditorAnalysis);
+    document.getElementById('draft-output').addEventListener('input', () => { runEditorAnalysis(); pushEditorSnapshot(); });
     document.getElementById('btn-copy-draft').addEventListener('click', handleCopyDraft);
     document.getElementById('btn-save-template-single').addEventListener('click', handleSaveFromDraft);
+    document.getElementById('btn-undo').addEventListener('click', handleUndo);
+    document.getElementById('btn-redo').addEventListener('click', handleRedo);
+    document.getElementById('btn-analyze-tone').addEventListener('click', handleAnalyzeTone);
 
     initPurposeModal();
 
@@ -135,7 +183,12 @@ async function handleGenerate() {
     setBtnLoading(btn, false);
     if (result.success) {
         document.getElementById('draft-output').value = result.email;
+        if (result.subject) document.getElementById('email-subject').value = result.subject;
+        pushEditorSnapshot();
         runEditorAnalysis();
+        // Reset tone analysis
+        document.getElementById('tone-results').style.display = 'none';
+        document.getElementById('tone-placeholder').style.display = 'block';
     } else {
         alert("Generation failed: " + result.error);
     }
@@ -156,6 +209,7 @@ async function handleRefine() {
     setBtnLoading(btn, false);
     if (result.success) {
         document.getElementById('draft-output').value = result.email;
+        pushEditorSnapshot();
         runEditorAnalysis();
     } else {
         alert("Refine failed: " + result.error);
@@ -173,6 +227,10 @@ async function handleSendSingle() {
     if (!body)  { alert("Draft is empty."); return; }
     if (!to)    { alert("Recipient email is required."); return; }
 
+    // Show SMTP console
+    const consoleEl = document.getElementById('smtp-console-single');
+    if (consoleEl) consoleEl.style.display = 'block';
+
     setBtnLoading(btn, true, "⏳ Sending...");
     const result = await pywebview.api.send_email({
         smtp_provider: getVal('smtp-provider-settings'),
@@ -182,6 +240,7 @@ async function handleSendSingle() {
         subject,
         body,
         attachments: collectAttachments(),
+        log_id: 'single',
     });
     setBtnLoading(btn, false);
     showFlash('flash-single', result.success ? "✔ Sent!" : "✘ " + result.error);
@@ -252,4 +311,49 @@ function runEditorAnalysis() {
     document.getElementById('stat-spam').style.color  =
         spamScore > 30 ? 'var(--danger-color)' : spamScore > 15 ? 'var(--warning-color)' : 'var(--success-color)';
     document.getElementById('stat-keywords').innerText = matches.length > 0 ? matches.join(', ') : '(none)';
+}
+
+// ── Tone Analysis ─────────────────────────────────────────────────────────
+async function handleAnalyzeTone() {
+    const body = getVal('draft-output');
+    if (!body.trim()) { alert('Generate an email first.'); return; }
+    const btn = document.getElementById('btn-analyze-tone');
+    setBtnLoading(btn, true, '✦ Analyzing...');
+    const result = await pywebview.api.analyze_email_tone({
+        body,
+        ai_provider: getActiveProvider(),
+        model:       getActiveModel(),
+    });
+    setBtnLoading(btn, false);
+    if (!result.success) { alert('Tone analysis failed: ' + result.error); return; }
+    const d = result.data;
+    // Show results
+    document.getElementById('tone-results').style.display      = 'block';
+    document.getElementById('tone-placeholder').style.display  = 'none';
+    // Formality
+    document.getElementById('tone-formality-val').innerText  = d.formality + '/100';
+    document.getElementById('tone-formality-bar').style.width = d.formality + '%';
+    // Friendliness
+    document.getElementById('tone-friendly-val').innerText  = d.friendliness + '/100';
+    document.getElementById('tone-friendly-bar').style.width = d.friendliness + '%';
+    // Urgency
+    document.getElementById('tone-urgency-val').innerText  = d.urgency + '/100';
+    document.getElementById('tone-urgency-bar').style.width = d.urgency + '%';
+    // Clarity
+    document.getElementById('tone-clarity-val').innerText  = d.clarity + '/100';
+    document.getElementById('tone-clarity-bar').style.width = d.clarity + '%';
+    // Advice
+    const adviceEl = document.getElementById('tone-advice');
+    if (adviceEl) adviceEl.innerText = d.advice ? '💡 ' + d.advice : '';
+}
+
+// ── SMTP Log (global, called by Python via evaluate_js) ───────────────────
+function appendSmtpLog(targetId, msg) {
+    const boxId = targetId === 'bulk' ? 'smtp-log-bulk' : 'smtp-log-single';
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const line = document.createElement('div');
+    line.innerText = msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
 }
