@@ -103,10 +103,13 @@ def run_app():
         height    = 860,
         min_size  = (1000, 700),
         resizable = True,
+        background_color = '#0d0f12',
     )
     api.set_window(window)
 
-    webview.start(debug=False)
+    # Set window icon on platforms that support it dynamically
+    icon_path = str(Path(__file__).parent / "templates" / "app_icon.png")
+    webview.start(debug=False, icon=icon_path)
 
 
 if __name__ == "__main__":
