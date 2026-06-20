@@ -34,6 +34,10 @@ function bindBulkEmailEvents() {
     document.getElementById('btn-approve-send').addEventListener('click',  handleApproveSend);
     document.getElementById('btn-approve-skip').addEventListener('click',  handleApproveSkip);
     document.getElementById('btn-approve-edit').addEventListener('click',  handleApproveEdit);
+
+    // Column mapping confirm button
+    const confirmBtn = document.getElementById('btn-confirm-mapping');
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmColumnMapping);
 }
 
 // ── Upload / Drop ─────────────────────────────────────────────────────────
@@ -58,6 +62,13 @@ async function processUploadedFile(path) {
 
     renderBulkPreview(result.rows.slice(0, 5));
     renderCustomFieldInputs(result.columns || []);
+
+    // Show and populate column mapping panel
+    const cols = result.columns || [];
+    if (cols.length > 0) {
+        populateMappingDropdowns(cols);
+        document.getElementById('bulk-mapping-section').style.display = 'block';
+    }
 }
 
 function renderBulkPreview(rows) {
@@ -127,11 +138,62 @@ async function handleBulkGenerate() {
     updateBulkProgress(0, approvalQueue.length);
 }
 
+// ── Column Mapping ────────────────────────────────────────────────────────
+function populateMappingDropdowns(cols) {
+    const GUESS = {
+        'map-name':    ['name', 'ad', 'isim', 'full name', 'fullname', 'contact'],
+        'map-email':   ['email', 'e-mail', 'mail', 'eposta', 'e-posta'],
+        'map-company': ['company', 'firma', 'şirket', 'sirket', 'organization', 'org'],
+        'map-purpose': ['purpose', 'amaç', 'amac', 'description', 'message', 'topic'],
+    };
+    ['map-name', 'map-email', 'map-company', 'map-purpose'].forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        // Build options
+        const baseOpt = selId === 'map-name' || selId === 'map-email'
+            ? `<option value="">— select —</option>` : `<option value="">(none)</option>`;
+        sel.innerHTML = baseOpt + cols.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        // Auto-guess
+        const guesses = GUESS[selId] || [];
+        const matched = cols.find(c => guesses.some(g => c.toLowerCase().includes(g)));
+        if (matched) sel.value = matched;
+    });
+}
+
+function confirmColumnMapping() {
+    const nameCol    = document.getElementById('map-name')?.value;
+    const emailCol   = document.getElementById('map-email')?.value;
+    const companyCol = document.getElementById('map-company')?.value;
+    const purposeCol = document.getElementById('map-purpose')?.value;
+
+    if (!nameCol || !emailCol) {
+        showFlash('flash-mapping', '⚠ Name and Email columns are required');
+        return;
+    }
+
+    // Normalise each row to have standard keys
+    uploadedBulkData = uploadedBulkData.map(row => {
+        const normalised = Object.assign({}, row);
+        normalised.Name    = row[nameCol]    || '';
+        normalised.Email   = row[emailCol]   || '';
+        if (companyCol) normalised.Company  = row[companyCol] || '';
+        if (purposeCol) normalised.purpose  = row[purposeCol] || '';
+        return normalised;
+    });
+
+    showFlash('flash-mapping', `✔ Mapped ${uploadedBulkData.length} rows`);
+    document.getElementById('bulk-mapping-section').style.display = 'none';
+}
+
 // ── Send All ──────────────────────────────────────────────────────────────
 async function handleBulkSendAll() {
     if (!approvalQueue.length) { alert("Generate emails first."); return; }
     const btn = document.getElementById('btn-bulk-send-all');
     setBtnLoading(btn, true, "⏳ Sending...");
+
+    // Show SMTP console
+    const consoleEl = document.getElementById('smtp-console-bulk');
+    if (consoleEl) consoleEl.style.display = 'block';
 
     const delay = parseInt(getVal('email-delay-seconds') || "2");
     const result = await pywebview.api.send_bulk({
@@ -140,6 +202,7 @@ async function handleBulkSendAll() {
         smtp_email:    getVal('smtp-email-settings'),
         smtp_password: getVal('smtp-password-settings'),
         delay_seconds: delay,
+        log_id: 'bulk',
     });
     setBtnLoading(btn, false);
     if (result.success) {
