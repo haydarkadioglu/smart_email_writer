@@ -70,6 +70,17 @@ class OpenAICompatClient:
             self._init_error = e
 
     # ── internal ──────────────────────────────────────────────────────────
+    def _call_raw(self, prompt: str) -> str:
+        """Send a raw user-only prompt and return the model response as a string."""
+        if not self._configured:
+            raise RuntimeError(str(self._init_error))
+        resp = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        return resp.choices[0].message.content if resp and resp.choices else ""
+
     def _chat(self, system: str, user: str) -> str:
         if not self._configured:
             raise RuntimeError(str(self._init_error))

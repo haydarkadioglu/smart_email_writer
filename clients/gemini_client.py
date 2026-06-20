@@ -26,6 +26,19 @@ class GeminiClient:
             except Exception:
                 self._configured = False
 
+    def _call_raw(self, prompt: str) -> str:
+        """Send a raw prompt and return the text response verbatim."""
+        if not self._configured or self._client is None:
+            raise RuntimeError("Gemini client is not configured. Check your GEMINI_API_KEY.")
+        full_text = ""
+        for chunk in self._client.models.generate_content_stream(
+            model=self.model_name,
+            contents=[types.Content(role="user", parts=[types.Part.from_text(text=prompt)])],
+            config=types.GenerateContentConfig(),
+        ):
+            full_text += chunk.text or ""
+        return full_text
+
     def generate_email(
         self,
         purpose: str,

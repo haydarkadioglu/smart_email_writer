@@ -37,6 +37,18 @@ class GroqClient:
             return str(self._init_error)
         return f"Groq client failed to initialize: {self._init_error}"
 
+    def _call_raw(self, prompt: str) -> str:
+        """Send a raw user-only prompt and return the model response as a string."""
+        if not self._configured:
+            raise RuntimeError(self._not_configured_message())
+        resp = self._client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            stream=False,
+        )
+        return resp.choices[0].message.content if resp and resp.choices else ""
+
     def generate_email(
         self,
         purpose: str,
