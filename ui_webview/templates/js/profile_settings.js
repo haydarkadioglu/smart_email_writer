@@ -131,12 +131,66 @@ async function testSmtpConnection() {
     showFlash('flash-settings', result.success ? '✔ SMTP OK' : '✘ ' + result.error);
 }
 
-// ── Bind all profile & settings events ────────────────────────────────────
+// ── Usage Stats Modal ─────────────────────────────────────────────────────
+async function openUsageModal() {
+    const modal = document.getElementById('usage-modal');
+    if (modal) modal.classList.add('active');
+    const result = await pywebview.api.get_usage_stats();
+    if (!result.success) return;
+    document.getElementById('usage-total-tokens').innerText = result.total_tokens.toLocaleString();
+    document.getElementById('usage-total-cost').innerText   = '$' + result.total_cost.toFixed(6);
+    document.getElementById('usage-entry-count').innerText  = result.logs.length;
+    // Render table
+    const tbody = document.getElementById('usage-table-body');
+    if (!tbody) return;
+    if (!result.logs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No usage data yet.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = result.logs.map(e => `
+        <tr>
+            <td>${e.ts}</td>
+            <td>${e.provider}</td>
+            <td style="font-size:12px;color:var(--text-secondary)">${e.model || '—'}</td>
+            <td>${e.tokens_in}</td>
+            <td>${e.tokens_out}</td>
+            <td style="color:var(--success-color)">$${e.cost_usd.toFixed(6)}</td>
+        </tr>
+    `).join('');
+}
+
+function closeUsageModal() {
+    const modal = document.getElementById('usage-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function clearUsageLogs() {
+    if (!confirm('Clear all usage history? This cannot be undone.')) return;
+    await pywebview.api.clear_usage_logs();
+    await openUsageModal();
+}
+
+// ── Bind all profile & settings events ─────────────────────────────────────────
 function bindProfileAndSettingsEvents() {
     document.getElementById('btn-save-profile').addEventListener('click',   saveProfile);
     document.getElementById('btn-clear-history').addEventListener('click',  clearHistory);
     document.getElementById('btn-save-settings').addEventListener('click',  saveSettings);
     document.getElementById('btn-test-smtp').addEventListener('click',      testSmtpConnection);
+
+    // Usage stats modal
+    const openUsageBtn = document.getElementById('btn-open-usage');
+    if (openUsageBtn) openUsageBtn.addEventListener('click', openUsageModal);
+    ['btn-close-usage-modal', 'btn-close-usage-modal2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('click', closeUsageModal);
+    });
+    const clearUsageBtn = document.getElementById('btn-clear-usage');
+    if (clearUsageBtn) clearUsageBtn.addEventListener('click', clearUsageLogs);
+    // Close on backdrop click
+    const usageModal = document.getElementById('usage-modal');
+    if (usageModal) usageModal.addEventListener('click', e => {
+        if (e.target === usageModal) closeUsageModal();
+    });
 
     // AI Provider change → refresh model list in Settings
     document.getElementById('settings-default-provider').addEventListener('change', () => {
