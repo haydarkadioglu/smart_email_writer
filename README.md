@@ -2,44 +2,32 @@
 
 > **AI-Powered Email Generation & Management Tool**
 
-A comprehensive Streamlit application that leverages Google's Gemini AI to generate professional emails, supports multiple email providers, and maintains detailed logs of all communications.
+A modern desktop application that uses AI (Gemini, Groq, OpenAI, Claude, DeepSeek, OpenRouter) to generate and send professional emails — individually or in bulk.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.38.0-red.svg)
-![Gemini](https://img.shields.io/badge/Gemini-2.0--flash--lite-green.svg)
+![pywebview](https://img.shields.io/badge/pywebview-4.x-orange.svg)
+![Gemini](https://img.shields.io/badge/Gemini-2.0--flash-green.svg)
 
 ## ✨ Features
 
-Smart Email Writer leverages **Gemini 2.0 Flash Lite** AI to generate professional emails with customizable tone, length, and language options. The app features comprehensive profile management for personal and professional details, supports Gmail and Outlook/Hotmail delivery with file attachments, and maintains detailed Excel logs of all sent emails. 
-
-### 🆕 **NEW: Bulk Email Feature**
-- **CSV/Excel Import**: Upload recipient lists from CSV or Excel files
-- **Dynamic Column Mapping**: Map any column names to recipient data fields
-- **Custom Fields**: Add personalized fields for advanced personalization
-- **🤖 AI-Powered Generation**: Generate unique emails for each recipient using Gemini/Groq
-- **📝 Template-based Personalization**: Use placeholders for quick personalization
-- **Email Validation**: Automatic validation of email addresses
-- **Progress Tracking**: Real-time progress bar and status updates
-- **Rate Limiting**: Configurable delays to avoid spam filters
-- **Batch Processing**: Send hundreds of personalized emails efficiently
-
-Perfect for job applications, business communications, marketing campaigns, and automated email workflows.
-
-### 🖥️ **NEW: Qt6 Desktop GUI**
-- **Native Desktop Application**: Modern Qt6-based GUI alongside Streamlit web interface
-- **Professional Design**: Dark theme with gradients, animations, and modern aesthetics
-- **Full Feature Parity**: All Streamlit features available in desktop app
-- **Cross-Platform**: Works on Windows, macOS, and Linux
-- **Offline Capable**: No browser required, runs as standalone application
-- **Rich UI Components**: Advanced forms, progress tracking, and data visualization
-
+- **AI Email Generation** — Powered by Gemini, Groq, OpenAI, Claude, DeepSeek or OpenRouter
+- **Single Email Composer** — Recipient info, prompt templates, AI refine, undo/redo history, tone analysis
+- **Bulk Email Campaigns** — CSV/Excel upload with smart column mapping, per-recipient AI generation, approval workflow
+- **Email Templates** — Save and reuse email draft templates and AI prompt templates
+- **SMTP Debug Console** — Real-time SMTP step logging per send
+- **AI Tone Analysis** — Formality, Friendliness, Urgency, Clarity scores + AI advice
+- **Cost & Token Tracker** — Estimates token usage and cost per AI call with session log
+- **Multiple Themes** — Obsidian Dark, Cyberpunk Glass, Emerald Forest, Sunset Glow, Classic Slate
+- **Send History** — Full log of generated and sent emails
+- **Attachments** — Attach files to single emails
+- **Standalone EXE** — Build a single `.exe` with PyInstaller
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - **Python 3.10+**
-- **Gemini API Key** ([Get one here](https://aistudio.google.com/api-keys))
-- **Email credentials** (Gmail App Password recommended for 2FA accounts)
+- An API key for at least one AI provider (e.g. [Gemini](https://aistudio.google.com/api-keys))
+- Gmail/Outlook credentials for sending
 
 ### Installation
 
@@ -64,35 +52,33 @@ Perfect for job applications, business communications, marketing campaigns, and 
    ```
 
 4. **Configure environment**
-   
-   Create `.env` file in the root directory:
-   ```bash
-   # Required
+
+   Create a `.env.local` file in the root directory:
+   ```env
+   # AI Provider Keys (add whichever you have)
    GEMINI_API_KEY=your_gemini_api_key_here
-   
-   # Optional (for auto-filling SMTP settings)
+   GROQ_API_KEY=your_groq_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here
+   CLAUDE_API_KEY=your_claude_api_key_here
+   DEEPSEEK_API_KEY=your_deepseek_api_key_here
+   OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+   # Optional: pre-fill SMTP settings
    SMTP_PROVIDER=gmail
    SMTP_EMAIL=your-email@gmail.com
-   SMTP_PASSWORD=your_app_password
    ```
 
 5. **Run the application**
-   
-   **Option A: Streamlit Web Interface**
    ```bash
-   streamlit run main.py
+   python main.py
+   # or
+   run_app.bat
    ```
-   
-   **Option B: Qt6 Desktop Application (NEW!)**
+
+6. **Build standalone EXE** (optional)
    ```bash
-   # Install Qt6 dependencies first
-   pip install -r requirements-qt.txt
-   
-   # Run Qt6 GUI
-   python main_qt.py
-   
-   # Or use the batch script (Windows)
-   run_qt.bat
+   python build.py
+   # Output: dist/SmartEmailWriter.exe
    ```
 
 ## 🔧 Configuration
@@ -103,113 +89,102 @@ Perfect for job applications, business communications, marketing campaigns, and 
 3. Generate **App Password**:
    - Security → 2-Step Verification → App passwords
    - Select "Mail" and "Other (Custom name)"
-   - Use the 16-character password in your `.env` file
+   - Use the 16-character password in the Settings tab
 
 ### Outlook/Hotmail Setup
 - Use your regular email password
-- For enhanced security, consider using App Passwords if available
+- For enhanced security, use App Passwords if available
 
 ## 📁 Project Structure
 
 ```
 smart_email_writer/
-├── main.py                 # Application entry point
-├── requirements.txt        # Python dependencies
-├── .env.example           # Environment template
+├── main.py                    # Application entry point (pywebview)
+├── build.py                   # PyInstaller build script
+├── run_app.bat                # Windows launch script
+├── requirements.txt           # Python dependencies
+├── .env.example               # Environment template
 ├── config/
-│   ├── app_config.py      # Application settings
-│   └── profile.json       # User profile storage
+│   ├── app_config.py          # Application settings
+│   ├── profile.json           # User profile storage
+│   └── usage_logs.json        # AI token usage log
 ├── clients/
-│   ├── gemini_client.py   # AI email generation
-│   ├── gmail_client.py    # Gmail SMTP client
-│   ├── outlook_client.py  # Outlook SMTP client
-│   └── smtp_base.py       # Base SMTP functionality
+│   ├── gemini_client.py       # Google Gemini AI client
+│   ├── groq_client.py         # Groq AI client
+│   ├── openai_compat_base.py  # OpenAI-compatible base
+│   ├── openai_client.py       # OpenAI client
+│   ├── claude_client.py       # Anthropic Claude client
+│   ├── deepseek_client.py     # DeepSeek client
+│   ├── openrouter_client.py   # OpenRouter client
+│   ├── gmail_client.py        # Gmail SMTP client
+│   ├── outlook_client.py      # Outlook SMTP client
+│   └── smtp_base.py           # Base SMTP functionality
 ├── services/
-│   ├── email_sender.py    # Email orchestration
-│   ├── excel_logger.py    # Activity logging
-│   ├── profile_store.py   # Profile management
-│   ├── file_parser.py     # CSV/Excel file parsing
-│   └── bulk_email_sender.py # Bulk email processing
+│   ├── email_sender.py        # Email orchestration
+│   ├── excel_logger.py        # Activity logging
+│   ├── profile_store.py       # Profile management
+│   ├── file_parser.py         # CSV/Excel parsing
+│   └── bulk_email_sender.py   # Bulk email processing
 ├── models/
-│   └── email_models.py    # Data models
-├── ui/
-│   └── app.py            # Streamlit interface
+│   └── email_models.py        # Data models
+├── ui_webview/
+│   ├── api.py                 # pywebview API class
+│   ├── mixins/                # Feature mixins (email, config, bulk…)
+│   └── templates/             # HTML/CSS/JS frontend
+│       ├── index.html
+│       ├── style.css
+│       ├── css/               # Modular stylesheets
+│       └── js/                # Tab logic modules
 └── logs/
-    └── sent_emails.xlsx  # Email activity log
+    └── sent_emails.xlsx       # Email activity log
 ```
 
 ## 🎯 Usage Examples
 
-### Single Email Generation
-**Job Application Email**
-1. **Fill your profile** with professional details
-2. **Set purpose**: "Software Developer position application"
-3. **Add context**: Job requirements, company details
-4. **Select tone**: Professional, Length: Medium
-5. **Generate & send**
+### Single Email
+1. Go to **Single Email** tab
+2. Fill in Recipient name, email, company
+3. Choose a **Prompt Template** or type a custom purpose
+4. Select your AI provider and click **✦ Generate Email**
+5. Optionally click **Refine** or **🎭 Analyze Tone**
+6. Click **📨 Send Email** — watch the SMTP console for real-time progress
 
-**Business Follow-up**
-1. **Purpose**: "Meeting follow-up regarding Q4 project"
-2. **Context**: Meeting outcomes, next steps
-3. **Tone**: Professional, Length: Short
-4. **Generate & send**
+### Bulk Email Campaign
+1. Go to **Bulk Email** tab
+2. Upload a CSV/Excel file with recipient data
+3. Use the **Column Mapping** panel to map Name, Email, Company columns
+4. Set a common purpose (or use per-recipient purpose column)
+5. Click **✦ Generate All** → review emails in the Approval workflow
+6. Click **📨 Send All** — monitor progress in the SMTP Console
 
-### 📧 Bulk Email Campaigns
+### Templates
+- Go to **Templates** to manage saved email templates and AI prompt templates
+- Prompt templates appear in the dropdown on the Single Email tab
 
-**🤖 AI-Powered Marketing Campaign**
-1. **Prepare CSV/Excel file** with columns: Name, Email, Company, Industry, Description
-2. **Upload file** and map columns to recipient fields
-3. **Enable AI Generation** and set purpose: "Introduce our new product to potential clients"
-4. **Configure AI settings**: Professional tone, English, Medium length
-5. **Add context**: "We're launching a new AI-powered CRM solution"
-6. **Preview data** and **Send bulk emails** - AI generates unique emails for each recipient
-
-**📝 Template-based Event Invitations**
-1. **Create recipient list** with Name, Email, Event, Date, Location
-2. **Map columns** and add custom fields for event details
-3. **Use template**: "Dear {name}, you're invited to {event} on {date} at {location}"
-4. **Send personalized invitations** to all recipients
-
-**🎯 Hybrid Approach**
-- Use **AI Generation** for high-value, personalized communications
-- Use **Template-based** for quick, standardized messages
-- Mix both approaches based on your campaign needs
+### Cost Tracking
+- Go to **Settings** → **View Stats →** to see token usage and estimated costs per AI call
 
 ## 🔒 Security & Privacy
 
-- **No credential storage**: SMTP passwords are session-only
-- **Local data**: All profiles and logs stored locally
+- **No credential storage in code**: SMTP passwords stored only in Settings (local config)
+- **Local data**: All profiles, logs and usage data stored locally
 - **Secure transmission**: SMTP with TLS encryption
-- **API key protection**: Store in environment variables only
+- **API key protection**: Stored in environment variables only
 
 ## 🛠️ Troubleshooting
-
-### Common Issues
 
 **"Application-specific password required"**
 - Enable 2FA and create App Password for Gmail
 - Use App Password instead of regular password
 
 **"Failed to generate email"**
-- Check GEMINI_API_KEY is set correctly
+- Check that your API key is set in `.env.local`
 - Verify internet connection
-- Try different model (Pro vs Flash)
+- Try a different AI provider or model
 
 **"SMTP authentication failed"**
-- Verify email/password combination
-- Check if 2FA requires App Password
-- Ensure SMTP settings are correct
-
-## 📈 Future Enhancements
-
-- [x] ~~Bulk email sending~~ ✅ **COMPLETED**
-- [ ] Email templates library
-- [ ] Email scheduling
-- [ ] Advanced analytics
-- [ ] Multi-account support
-- [ ] Email signature management
-- [ ] Email campaign analytics
-- [ ] A/B testing for email templates
+- Verify email/password combination in Settings
+- For Gmail, ensure you're using an App Password (not your account password)
 
 ## 🤝 Contributing
 
@@ -222,5 +197,3 @@ smart_email_writer/
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-
