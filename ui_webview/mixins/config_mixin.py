@@ -24,14 +24,14 @@ class ConfigMixin:
             "deepseek_models":   DeepSeekClient.MODELS,
             "openrouter_models": OpenRouterClient.MODELS,
 
-            # Which API keys are present in the environment
+            # Which API keys are present in the environment or settings
             "api_keys_configured": {
-                "gemini":     bool(os.getenv("GEMINI_API_KEY")),
-                "groq":       bool(os.getenv("GROQ_API_KEY")),
-                "openai":     bool(os.getenv("OPENAI_API_KEY")),
-                "claude":     bool(os.getenv("CLAUDE_API_KEY")),
-                "deepseek":   bool(os.getenv("DEEPSEEK_API_KEY")),
-                "openrouter": bool(os.getenv("OPENROUTER_API_KEY")),
+                "gemini":     bool(os.getenv("GEMINI_API_KEY") or settings.get("api_key_gemini")),
+                "groq":       bool(os.getenv("GROQ_API_KEY") or settings.get("api_key_groq")),
+                "openai":     bool(os.getenv("OPENAI_API_KEY") or settings.get("api_key_openai")),
+                "claude":     bool(os.getenv("CLAUDE_API_KEY") or settings.get("api_key_claude")),
+                "deepseek":   bool(os.getenv("DEEPSEEK_API_KEY") or settings.get("api_key_deepseek")),
+                "openrouter": bool(os.getenv("OPENROUTER_API_KEY") or settings.get("api_key_openrouter")),
             },
 
             # Env hint values (pre-fill SMTP from env)

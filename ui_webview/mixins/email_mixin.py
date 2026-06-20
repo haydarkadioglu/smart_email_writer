@@ -21,20 +21,26 @@ class EmailMixin:
     def _get_ai_client(self, provider: str, model_name: str):
         """Return the appropriate AI client for the given provider string."""
         p = provider.lower()
-        key = lambda env: os.getenv(env, "")
+        settings = self.settings_store.load()
+
+        def get_key(provider_name: str, env_var: str) -> str:
+            val = settings.get(f"api_key_{provider_name}", "")
+            if not val:
+                val = os.getenv(env_var, "")
+            return val
 
         if p == "groq":
-            return GroqClient(api_key=key("GROQ_API_KEY"), model_name=model_name)
+            return GroqClient(api_key=get_key("groq", "GROQ_API_KEY"), model_name=model_name)
         elif p == "openai":
-            return OpenAIClient(api_key=key("OPENAI_API_KEY"), model_name=model_name)
+            return OpenAIClient(api_key=get_key("openai", "OPENAI_API_KEY"), model_name=model_name)
         elif p == "claude":
-            return ClaudeClient(api_key=key("CLAUDE_API_KEY"), model_name=model_name)
+            return ClaudeClient(api_key=get_key("claude", "CLAUDE_API_KEY"), model_name=model_name)
         elif p == "deepseek":
-            return DeepSeekClient(api_key=key("DEEPSEEK_API_KEY"), model_name=model_name)
+            return DeepSeekClient(api_key=get_key("deepseek", "DEEPSEEK_API_KEY"), model_name=model_name)
         elif p == "openrouter":
-            return OpenRouterClient(api_key=key("OPENROUTER_API_KEY"), model_name=model_name)
+            return OpenRouterClient(api_key=get_key("openrouter", "OPENROUTER_API_KEY"), model_name=model_name)
         else:  # default: gemini
-            return GeminiClient(api_key=key("GEMINI_API_KEY"), model_name=model_name)
+            return GeminiClient(api_key=get_key("gemini", "GEMINI_API_KEY"), model_name=model_name)
 
     def analyze_email(self, subject: str, body: str, language: str = "English") -> Dict[str, Any]:
         try:
