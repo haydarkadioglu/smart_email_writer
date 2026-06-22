@@ -37,6 +37,9 @@ window.addEventListener('pywebviewready', async () => {
         bindBulkEmailEvents();
         bindTemplateEvents();
         bindProfileAndSettingsEvents();
+        bindChatEvents();
+        bindDraftEvents();
+        bindAnalyticsEvents();
 
         // Boot-time data loads
         if (typeof updateSinglePromptTemplateDropdown === 'function') {
@@ -114,6 +117,9 @@ function switchTab(tabId) {
 
     if (tabId === 'history')   loadHistory();
     if (tabId === 'templates') renderTemplates();
+    if (tabId === 'drafts')    loadDrafts();
+    if (tabId === 'analytics') loadAnalytics();
+    if (tabId === 'chat')      initChatTab();
 }
 
 // ── Themes ────────────────────────────────────────────────────────────────

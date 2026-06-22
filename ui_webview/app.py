@@ -12,6 +12,8 @@ from services.settings_store import SettingsStore
 from services.template_store import TemplateStore
 from services.history_store import HistoryStore
 from services.spam_analyzer import SpamAnalyzer
+from services.draft_store import DraftStore
+from services.chat_store import ChatStore
 
 # Import mixins
 from ui_webview.mixins.config_mixin import ConfigMixin
@@ -19,9 +21,11 @@ from ui_webview.mixins.template_mixin import TemplateMixin
 from ui_webview.mixins.history_mixin import HistoryMixin
 from ui_webview.mixins.email_mixin import EmailMixin
 from ui_webview.mixins.bulk_mixin import BulkMixin
+from ui_webview.mixins.draft_mixin import DraftMixin
+from ui_webview.mixins.chat_mixin import ChatMixin
 
 
-class WebViewAPI(ConfigMixin, TemplateMixin, HistoryMixin, EmailMixin, BulkMixin):
+class WebViewAPI(ConfigMixin, TemplateMixin, HistoryMixin, EmailMixin, BulkMixin, DraftMixin, ChatMixin):
     """
     Bridge class exposed to the JS front-end via pywebview.
 
@@ -45,6 +49,7 @@ class WebViewAPI(ConfigMixin, TemplateMixin, HistoryMixin, EmailMixin, BulkMixin
         "email_sender", "bulk_email_sender", "file_parser",
         "excel_logger", "profile_store", "settings_store",
         "template_store", "history_store", "spam_analyzer",
+        "draft_store", "chat_store",
         "bulk_thread", "stop_bulk_sending",
     })
 
@@ -59,6 +64,8 @@ class WebViewAPI(ConfigMixin, TemplateMixin, HistoryMixin, EmailMixin, BulkMixin
         self.template_store     = TemplateStore()
         self.history_store      = HistoryStore()
         self.spam_analyzer      = SpamAnalyzer()
+        self.draft_store        = DraftStore()
+        self.chat_store         = ChatStore()
         self.bulk_thread: Optional[threading.Thread] = None
         self.stop_bulk_sending  = False
         # Window stored separately so __dir__ can hide it
