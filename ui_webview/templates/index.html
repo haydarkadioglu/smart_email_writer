@@ -515,29 +515,36 @@
             <span id="flash-settings" class="flash-message"></span>
         </div>
 
-        <!-- API Keys status (NEW) -->
+        <!-- AI Settings (Unified) -->
         <div class="card settings-card">
-            <h3>🔑 API Keys</h3>
+            <h3>🤖 AI Settings</h3>
             <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">
-                Configure your AI provider API keys here. Saved keys will override environment variables if set.
+                Configure your active AI provider, API keys, models, and options. Saved keys override environment variables.
             </p>
             <div id="api-key-status-grid" class="api-key-status-grid"></div>
             
             <div class="profile-grid" style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
                 <div class="form-group">
-                    <label class="form-label">Provider to Configure</label>
-                    <select id="settings-api-key-provider" class="form-input form-select">
-                        <option value="gemini">Gemini</option>
-                        <option value="groq">Groq</option>
-                        <option value="openai">OpenAI</option>
-                        <option value="claude">Claude</option>
-                        <option value="deepseek">DeepSeek</option>
-                        <option value="openrouter">OpenRouter</option>
-                    </select>
+                    <label class="form-label">Active Provider</label>
+                    <select id="settings-default-provider" class="form-input form-select"></select>
                 </div>
                 <div class="form-group">
                     <label class="form-label" id="settings-api-key-label">Gemini API Key</label>
                     <input id="settings-api-key-input" type="password" class="form-input" placeholder="Enter API Key (or empty to use .env)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Default Model</label>
+                    <select id="settings-default-model" class="form-input form-select"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Custom Model Override</label>
+                    <input id="settings-model-override" type="text" class="form-input"
+                        placeholder="e.g. gpt-4o (overrides dropdown if set)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Default Email Purpose</label>
+                    <input id="settings-purpose" type="text" class="form-input"
+                        placeholder="Schedule a discovery call…">
                 </div>
             </div>
         </div>
@@ -617,32 +624,6 @@
             </div>
         </div>
 
-        <!-- AI Defaults -->
-        <div class="card settings-card">
-            <h3>🤖 AI Defaults</h3>
-            <div class="profile-grid">
-                <div class="form-group">
-                    <label class="form-label">Default Provider</label>
-                    <!-- Options injected by buildProviderDropdowns() in core.js -->
-                    <select id="settings-default-provider" class="form-input form-select"></select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Default Model</label>
-                    <select id="settings-default-model" class="form-input form-select"></select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Custom Model Override</label>
-                    <input id="settings-model-override" type="text" class="form-input"
-                        placeholder="e.g. gpt-4o (overrides dropdown if set)">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Default Email Purpose</label>
-                    <input id="settings-purpose" type="text" class="form-input"
-                        placeholder="Schedule a discovery call…">
-                </div>
-            </div>
-        </div>
-
         <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
 
         <!-- AI Cost / Usage link -->
@@ -670,6 +651,54 @@
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
             <button id="btn-cancel-purpose-modal" class="btn btn-secondary">Cancel</button>
             <button id="btn-save-purpose-modal" class="btn btn-primary">Save & Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for AI Cost / Usage Stats -->
+<div id="usage-modal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3>📊 AI Token Usage & Costs</h3>
+            <button id="btn-close-usage-modal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+                <div style="flex: 1; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Total Tokens</div>
+                    <div id="usage-total-tokens" style="font-size: 20px; font-weight: bold; color: var(--accent-color);">0</div>
+                </div>
+                <div style="flex: 1; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Total Cost (USD)</div>
+                    <div id="usage-total-cost" style="font-size: 20px; font-weight: bold; color: var(--success-color);">$0.000000</div>
+                </div>
+                <div style="flex: 1; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">API Requests</div>
+                    <div id="usage-entry-count" style="font-size: 20px; font-weight: bold; color: var(--text-primary);">0</div>
+                </div>
+            </div>
+            
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="padding: 10px;">Time</th>
+                            <th style="padding: 10px;">Provider</th>
+                            <th style="padding: 10px;">Model</th>
+                            <th style="padding: 10px;">In</th>
+                            <th style="padding: 10px;">Out</th>
+                            <th style="padding: 10px;">Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usage-table-body">
+                        <!-- Filled dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <button id="btn-clear-usage" class="btn btn-secondary" style="color: var(--danger-color); border-color: var(--danger-color);">🗑 Clear History</button>
+            <button id="btn-close-usage-modal2" class="btn btn-primary">Close</button>
         </div>
     </div>
 </div>

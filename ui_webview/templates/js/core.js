@@ -30,7 +30,6 @@ window.addEventListener('pywebviewready', async () => {
         // Seed forms
         populateConfigDefaults();
         populateProfileForm();
-        updateModelDropdowns('settings-default-provider', 'settings-default-model');
 
         // Bind all modules
         bindNavEvents();
@@ -57,14 +56,12 @@ window.addEventListener('pywebviewready', async () => {
 
 // ── Provider dropdowns ────────────────────────────────────────────────────
 function buildProviderDropdowns() {
-    const targets = ['settings-default-provider'];
-    targets.forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return;
-        sel.innerHTML = PROVIDERS.map(p =>
-            `<option value="${p.id}">${p.label}</option>`
-        ).join('');
-    });
+    // Only one unified provider dropdown now
+    const sel = document.getElementById('settings-default-provider');
+    if (!sel) return;
+    sel.innerHTML = PROVIDERS.map(p =>
+        `<option value="${p.id}">${p.label}</option>`
+    ).join('');
 }
 
 function updateModelDropdowns(providerId, modelId) {
@@ -145,42 +142,43 @@ function populateConfigDefaults() {
 
     // Restore saved API keys locally
     window.localApiKeys = {
-        gemini: s.api_key_gemini || "",
-        groq: s.api_key_groq || "",
-        openai: s.api_key_openai || "",
-        claude: s.api_key_claude || "",
-        deepseek: s.api_key_deepseek || "",
+        gemini:     s.api_key_gemini     || "",
+        groq:       s.api_key_groq       || "",
+        openai:     s.api_key_openai     || "",
+        claude:     s.api_key_claude     || "",
+        deepseek:   s.api_key_deepseek   || "",
         openrouter: s.api_key_openrouter || ""
     };
-    
-    const apiKeyProvider = document.getElementById('settings-api-key-provider');
-    const apiKeyInput = document.getElementById('settings-api-key-input');
-    const apiKeyLabel = document.getElementById('settings-api-key-label');
-    
-    if (apiKeyProvider && apiKeyInput) {
-        apiKeyProvider.value = s.ai_provider || "gemini";
-        
-        const updateInput = () => {
-            apiKeyLabel.innerText = apiKeyProvider.options[apiKeyProvider.selectedIndex].text + " API Key";
-            apiKeyInput.value = window.localApiKeys[apiKeyProvider.value] || "";
-        };
-        
-        updateInput();
-        
-        apiKeyProvider.addEventListener('change', updateInput);
-        
+
+    // Unified provider dropdown — updates API key field + model list on change
+    const providerSel  = document.getElementById('settings-default-provider');
+    const apiKeyInput  = document.getElementById('settings-api-key-input');
+    const apiKeyLabel  = document.getElementById('settings-api-key-label');
+
+    const syncProviderUI = () => {
+        if (!providerSel) return;
+        const prov = providerSel.value;
+        const meta = PROVIDERS.find(p => p.id === prov);
+        if (apiKeyLabel) apiKeyLabel.innerText = (meta ? meta.label : prov) + " API Key";
+        if (apiKeyInput) apiKeyInput.value = window.localApiKeys[prov] || "";
+        updateModelDropdowns('settings-default-provider', 'settings-default-model');
+    };
+
+    if (providerSel) {
+        providerSel.value = s.ai_provider || "gemini";
+        providerSel.addEventListener('change', syncProviderUI);
+    }
+    if (apiKeyInput) {
         apiKeyInput.addEventListener('input', () => {
-            window.localApiKeys[apiKeyProvider.value] = apiKeyInput.value;
+            if (providerSel) window.localApiKeys[providerSel.value] = apiKeyInput.value;
         });
     }
 
-    // Restore saved provider selections
-    setVal('settings-default-provider', s.ai_provider || "gemini");
     setVal('settings-model-override', s.model_override || "");
-    setVal('settings-purpose', s.default_purpose || "");
-    
-    // Trigger populating default model selector
-    updateModelDropdowns('settings-default-provider', 'settings-default-model');
+    setVal('settings-purpose',        s.default_purpose || "");
+
+    // Initial sync
+    syncProviderUI();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────

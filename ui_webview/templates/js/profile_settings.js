@@ -97,8 +97,16 @@ async function saveSettings() {
     setBtnLoading(btn, true, "Saving...");
     
     const provider = getVal('settings-default-provider');
-    const model = getVal('settings-default-model');
+    const model    = getVal('settings-default-model');
     const modelOverride = getVal('settings-model-override');
+
+    // Sync any in-progress API key input to localApiKeys before saving
+    const apiKeyInput = document.getElementById('settings-api-key-input');
+    const providerSel = document.getElementById('settings-default-provider');
+    if (apiKeyInput && providerSel) {
+        window.localApiKeys = window.localApiKeys || {};
+        window.localApiKeys[providerSel.value] = apiKeyInput.value;
+    }
     
     const payload = {
         smtp_provider:       getVal('smtp-provider-settings'),
@@ -205,11 +213,6 @@ function bindProfileAndSettingsEvents() {
     const usageModal = document.getElementById('usage-modal');
     if (usageModal) usageModal.addEventListener('click', e => {
         if (e.target === usageModal) closeUsageModal();
-    });
-
-    // AI Provider change → refresh model list in Settings
-    document.getElementById('settings-default-provider').addEventListener('change', () => {
-        updateModelDropdowns('settings-default-provider', 'settings-default-model');
     });
 
     // Theme cards
