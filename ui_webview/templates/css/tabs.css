@@ -510,9 +510,6 @@
 .text-success { color: var(--success-color); }
 .text-danger  { color: var(--danger-color);  }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   CHAT TAB
-   ════════════════════════════════════════════════════════════════════════════ */
 
 .chat-layout {
     display: flex;

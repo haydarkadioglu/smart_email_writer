@@ -1,0 +1,104 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   ANALYTICS TAB
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.analytics-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+.analytics-summary-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+.analytics-summary-card:hover { transform: translateY(-2px); }
+.analytics-summary-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.analytics-summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Period filter buttons */
+.analytics-period-btn.active {
+    background: var(--accent-color) !important;
+    color: #fff !important;
+    border-color: var(--accent-color) !important;
+}
+
+/* Category bars */
+.analytics-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.analytics-bar-label {
+    width: 180px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.analytics-bar-track {
+    flex: 1;
+    height: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 99px;
+    overflow: hidden;
+}
+.analytics-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-hover, var(--accent-color)));
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(.25,.8,.25,1);
+}
+.analytics-bar-count {
+    width: 28px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Daily chart */
+.analytics-daily-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    min-height: 100px;
+    padding: 8px 0 0;
+    overflow-x: auto;
+}
+.analytics-daily-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    min-width: 32px;
+}
+.analytics-daily-bar {
+    width: 20px;
+    background: var(--accent-color);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+}
+.analytics-daily-bar:hover { opacity: 1; }
+.analytics-daily-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+}

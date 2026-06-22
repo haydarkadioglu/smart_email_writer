@@ -17,15 +17,25 @@ from services.chat_store import ChatStore
 
 # Import mixins
 from ui_webview.mixins.config_mixin import ConfigMixin
+from ui_webview.mixins.analytics_mixin import AnalyticsMixin
+from ui_webview.mixins.cv_mixin import CvMixin
 from ui_webview.mixins.template_mixin import TemplateMixin
 from ui_webview.mixins.history_mixin import HistoryMixin
-from ui_webview.mixins.email_mixin import EmailMixin
-from ui_webview.mixins.bulk_mixin import BulkMixin
+from ui_webview.mixins.ai_mixin import AiMixin
+from ui_webview.mixins.smtp_mixin import SmtpMixin
+from ui_webview.mixins.bulk_file_mixin import BulkFileMixin
+from ui_webview.mixins.bulk_send_mixin import BulkSendMixin
 from ui_webview.mixins.draft_mixin import DraftMixin
 from ui_webview.mixins.chat_mixin import ChatMixin
 
 
-class WebViewAPI(ConfigMixin, TemplateMixin, HistoryMixin, EmailMixin, BulkMixin, DraftMixin, ChatMixin):
+class WebViewAPI(
+    ConfigMixin, AnalyticsMixin, CvMixin,
+    TemplateMixin, HistoryMixin,
+    AiMixin, SmtpMixin,
+    BulkFileMixin, BulkSendMixin,
+    DraftMixin, ChatMixin
+):
     """
     Bridge class exposed to the JS front-end via pywebview.
 
