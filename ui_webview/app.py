@@ -108,7 +108,15 @@ class WebViewAPI(
         if self.window: self.window.minimize()
 
     def toggle_maximize_window(self) -> None:
-        if self.window: self.window.toggle_fullscreen()
+        if not self.window: return
+        
+        is_max = getattr(self, "_is_maximized", False)
+        if is_max:
+            self.window.restore()
+            self._is_maximized = False
+        else:
+            self.window.maximize()
+            self._is_maximized = True
 
     def close_window(self) -> None:
         if self.window: self.window.destroy()
