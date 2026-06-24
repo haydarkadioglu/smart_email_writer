@@ -107,15 +107,33 @@ class WebViewAPI(
     def minimize_window(self) -> None:
         if self.window: self.window.minimize()
 
-    def toggle_maximize_window(self) -> None:
+    def toggle_maximize_window(self, left=0, top=0, width=0, height=0) -> None:
         if not self.window: return
         
         is_max = getattr(self, "_is_maximized", False)
         if is_max:
-            self.window.restore()
+            orig_w = getattr(self, "_orig_w", 1280)
+            orig_h = getattr(self, "_orig_h", 860)
+            orig_x = getattr(self, "_orig_x", None)
+            orig_y = getattr(self, "_orig_y", None)
+            
+            self.window.resize(orig_w, orig_h)
+            if orig_x is not None and orig_y is not None:
+                self.window.move(orig_x, orig_y)
+                
             self._is_maximized = False
         else:
-            self.window.maximize()
+            self._orig_w = self.window.width
+            self._orig_h = self.window.height
+            self._orig_x = self.window.x
+            self._orig_y = self.window.y
+            
+            if width > 0 and height > 0:
+                self.window.move(int(left), int(top))
+                self.window.resize(int(width), int(height))
+            else:
+                self.window.maximize()
+                
             self._is_maximized = True
 
     def close_window(self) -> None:

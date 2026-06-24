@@ -104,7 +104,14 @@ function updateApiStatus(text, state) {
 // ── Window Navigation ───────────────────────────────────────────────────────
 function bindWindowEvents() {
     document.getElementById('btn-minimize')?.addEventListener('click', () => pywebview.api.minimize_window());
-    document.getElementById('btn-maximize')?.addEventListener('click', () => pywebview.api.toggle_maximize_window());
+    document.getElementById('btn-maximize')?.addEventListener('click', () => {
+        pywebview.api.toggle_maximize_window(
+            window.screen.availLeft || 0,
+            window.screen.availTop || 0,
+            window.screen.availWidth,
+            window.screen.availHeight
+        );
+    });
     document.getElementById('btn-close')?.addEventListener('click', () => pywebview.api.close_window());
 }
 
