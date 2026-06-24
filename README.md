@@ -1,6 +1,6 @@
 # 📧 SEW AI
 
-> **AI-Powered Email Generation & Management Tool**
+> **AI-Powered Email Generation**
 
 A modern desktop application that uses AI (Gemini, Groq, OpenAI, Claude, DeepSeek, OpenRouter) to generate and send professional emails — individually or in bulk.
 
