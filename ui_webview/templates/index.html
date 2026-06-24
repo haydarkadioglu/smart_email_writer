@@ -3,11 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Email Writer</title>
+    <title>SEW AI</title>
     <meta name="description" content="AI-powered email drafting and bulk sending desktop app.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CUSTOM TITLE BAR (FRAMELESS WINDOW)
+════════════════════════════════════════════════════════════════════════ -->
+<div id="custom-titlebar" class="pywebview-drag-region">
+    <div class="titlebar-logo">
+        <img src="app_icon.png" alt="Logo">
+        <span>SEW AI</span>
+    </div>
+    <div class="titlebar-controls">
+        <button id="btn-minimize" class="titlebar-btn minimize" aria-label="Minimize">
+            <svg viewBox="0 0 10 10"><path d="M 1,5 L 9,5" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button id="btn-maximize" class="titlebar-btn maximize" aria-label="Maximize">
+            <svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+        </button>
+        <button id="btn-close" class="titlebar-btn close" aria-label="Close">
+            <svg viewBox="0 0 10 10"><path d="M 1,1 L 9,9 M 1,9 L 9,1" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+    </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      SIDEBAR NAVIGATION
@@ -16,7 +37,7 @@
     <div class="sidebar-header">
         <div class="logo-mark"><img src="app_icon.png" style="width:28px; height:28px; border-radius:6px; display:block;" alt="Logo"></div>
         <div>
-            <div class="app-name">SmartMail</div>
+            <div class="app-name">SEW AI</div>
             <div class="app-subtitle">AI Email Writer</div>
         </div>
     </div>
@@ -546,7 +567,7 @@
                 <div id="chat-messages" class="chat-messages">
                     <div class="chat-welcome">
                         <div style="font-size:36px;margin-bottom:8px;">🤖</div>
-                        <h3 style="margin:0 0 8px;">SmartMail AI</h3>
+                        <h3 style="margin:0 0 8px;">SEW AI</h3>
                         <p style="color:var(--text-secondary);font-size:13px;">
                             Ask me to draft an email, prepare a list of emails for multiple recipients,
                             or ask for advice on your message.
@@ -670,6 +691,20 @@
                     <label class="form-label">Default Email Purpose</label>
                     <input id="settings-purpose" type="text" class="form-input"
                         placeholder="Schedule a discovery call…">
+                </div>
+            </div>
+
+            <!-- AI Fallback Chain -->
+            <div style="margin-top:24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary)">AI Fallback Chain</h4>
+                    <button id="btn-add-fallback" class="btn btn-secondary btn-sm">+ Add Fallback</button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:12px;margin-bottom:12px">
+                    If the primary provider fails, SEW AI will automatically try the providers listed below in order.
+                </p>
+                <div id="fallback-chain-container" style="display:flex; flex-direction:column; gap:10px;">
+                    <!-- Fallback rows will be dynamically inserted here -->
                 </div>
             </div>
         </div>

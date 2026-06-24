@@ -73,6 +73,33 @@ class AiMixin:
         except Exception:
             pass  # Never crash the main flow for logging
 
+    def _execute_with_fallback(self, provider: str, model_name: str, action_func):
+        """
+        Executes action_func with an AI client.
+        If it fails, it tries the fallback chain configured in settings.
+        action_func signature: lambda client, provider_name, model: result
+        """
+        import logging
+        settings = self.settings_store.load()
+        fallback_chain = settings.get("ai_fallback_chain", [])
+        
+        attempts = [{"provider": provider, "model": model_name}] + fallback_chain
+        last_exception = None
+        
+        for attempt in attempts:
+            p = attempt.get("provider")
+            m = attempt.get("model", "")
+            if not p:
+                continue
+            try:
+                client = self._get_ai_client(p, m)
+                return action_func(client, p, m)
+            except Exception as e:
+                last_exception = e
+                logging.warning(f"AI Provider {p} ({m}) failed: {e}. Trying next...")
+                
+        raise last_exception or Exception("All AI providers in fallback chain failed.")
+
     def analyze_email(self, subject: str, body: str, language: str = "English") -> Dict[str, Any]:
         try:
             return self.spam_analyzer.analyze(subject, body, language)
@@ -94,11 +121,14 @@ class AiMixin:
                 "clarity (0-100), advice (a short 1-sentence tip to improve the email).\n\nEmail:\n" + body
             )
 
-            ai_client = self._get_ai_client(provider, model_name)
-            raw = ai_client._call_raw(prompt)
-            raw = raw.strip().strip("```json").strip("```").strip()
-            data = json.loads(raw)
-            self._log_usage(provider, model_name, prompt + body, raw)
+            def do_analyze(client, p, m):
+                raw = client._call_raw(prompt)
+                raw = raw.strip().strip("```json").strip("```").strip()
+                data = json.loads(raw)
+                self._log_usage(p, m, prompt + body, raw)
+                return data
+
+            data = self._execute_with_fallback(provider, model_name, do_analyze)
             return {"success": True, "data": data}
         except json.JSONDecodeError as e:
             return {"success": False, "error": f"AI returned non-JSON response: {e}"}
@@ -120,18 +150,22 @@ class AiMixin:
             if company:
                 additional_context = f"Company: {company}\n{additional_context}"
 
-            ai_client = self._get_ai_client(provider, model_name)
-            profile   = self.profile_store.load()
-            res = ai_client.generate_email(
-                purpose=purpose,
-                recipient_name=recipient_name,
-                tone=tone,
-                language=language,
-                additional_context=additional_context,
-                profile=profile,
-                email_length=email_length
-            )
-            self._log_usage(provider, model_name, purpose, res.body)
+            profile = self.profile_store.load()
+            
+            def do_generate(client, p, m):
+                res = client.generate_email(
+                    purpose=purpose,
+                    recipient_name=recipient_name,
+                    tone=tone,
+                    language=language,
+                    additional_context=additional_context,
+                    profile=profile,
+                    email_length=email_length
+                )
+                self._log_usage(p, m, purpose, res.body)
+                return res
+
+            res = self._execute_with_fallback(provider, model_name, do_generate)
             return {"success": True, "subject": res.subject, "email": res.body}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -145,17 +179,21 @@ class AiMixin:
             tone        = payload.get("tone", "Professional")
             language    = payload.get("language", "Turkish")
 
-            ai_client = self._get_ai_client(provider, model_name)
-            profile   = self.profile_store.load()
-            res = ai_client.refine_email(
-                subject="",
-                body=body,
-                instruction=instruction,
-                tone=tone,
-                language=language,
-                profile=profile
-            )
-            self._log_usage(provider, model_name, instruction + body, res.body)
+            profile = self.profile_store.load()
+            
+            def do_refine(client, p, m):
+                res = client.refine_email(
+                    subject="",
+                    body=body,
+                    instruction=instruction,
+                    tone=tone,
+                    language=language,
+                    profile=profile
+                )
+                self._log_usage(p, m, instruction + body, res.body)
+                return res
+
+            res = self._execute_with_fallback(provider, model_name, do_refine)
             return {"success": True, "subject": res.subject, "email": res.body}
         except Exception as e:
             return {"success": False, "error": str(e)}

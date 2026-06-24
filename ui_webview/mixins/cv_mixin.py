@@ -79,7 +79,9 @@ class CvMixin:
         provider   = settings.get("ai_provider", "gemini")
         model_name = settings.get(provider + "_model", "")
 
-        ai_client = self._get_ai_client(provider, model_name)
-        raw = ai_client._call_raw(prompt)
-        raw = raw.strip().strip("```json").strip("```").strip()
-        return json.loads(raw)
+        def do_extract(client, p, m):
+            raw = client._call_raw(prompt)
+            raw = raw.strip().strip("```json").strip("```").strip()
+            return json.loads(raw)
+
+        return self._execute_with_fallback(provider, model_name, do_extract)

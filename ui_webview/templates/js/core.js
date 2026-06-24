@@ -40,6 +40,7 @@ window.addEventListener('pywebviewready', async () => {
         bindChatEvents();
         bindDraftEvents();
         bindAnalyticsEvents();
+        bindWindowEvents();
 
         // Boot-time data loads
         if (typeof updateSinglePromptTemplateDropdown === 'function') {
@@ -100,7 +101,13 @@ function updateApiStatus(text, state) {
     el.className  = "status-indicator" + (state === "connected" ? " connected" : "");
 }
 
-// ── Tab Navigation ────────────────────────────────────────────────────────
+// ── Window Navigation ───────────────────────────────────────────────────────
+function bindWindowEvents() {
+    document.getElementById('btn-minimize')?.addEventListener('click', () => pywebview.api.minimize_window());
+    document.getElementById('btn-maximize')?.addEventListener('click', () => pywebview.api.toggle_maximize_window());
+    document.getElementById('btn-close')?.addEventListener('click', () => pywebview.api.close_window());
+}
+
 function bindNavEvents() {
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
@@ -185,6 +192,7 @@ function populateConfigDefaults() {
 
     // Initial sync
     syncProviderUI();
+    if (typeof renderFallbackChain === 'function') renderFallbackChain();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────

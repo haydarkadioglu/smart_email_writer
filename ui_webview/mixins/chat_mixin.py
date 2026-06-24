@@ -2,7 +2,7 @@ import json
 from typing import Dict, Any, List
 
 
-SYSTEM_PROMPT = """You are SmartMail AI, an expert email writing assistant.
+SYSTEM_PROMPT = """You are SEW AI, an expert email writing assistant.
 You help users write, review and send professional emails.
 
 When the user asks you to draft an email, respond with a JSON object ONLY (no markdown, no explanation outside JSON) in this exact format:
@@ -112,9 +112,12 @@ class ChatMixin:
                 + f"User: {user_message}\n\nAssistant:"
             )
 
-            ai_client = self._get_ai_client(provider, model_name)
-            raw_response = ai_client._call_raw(full_prompt)
-            self._log_usage(provider, model_name, full_prompt, raw_response)
+            def do_chat(client, p, m):
+                raw = client._call_raw(full_prompt)
+                self._log_usage(p, m, full_prompt, raw)
+                return raw
+
+            raw_response = self._execute_with_fallback(provider, model_name, do_chat)
 
             # ── Save user message ───────────────────────────────────────────
             self.chat_store.append_message(session_id, "user", user_message)

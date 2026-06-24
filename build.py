@@ -5,7 +5,7 @@ from pathlib import Path
 
 def run():
     print("=========================================")
-    print("   Smart Email Writer - Building EXE     ")
+    print("   SEW AI - Building EXE     ")
     print("=========================================\n")
     
     # 1. Install PyInstaller if not present
@@ -45,6 +45,8 @@ def run():
         "--exclude-module=PySide6",
         "--exclude-module=tkinter",
         "--exclude-module=matplotlib",
+        "--hidden-import=pdfplumber",
+        "--hidden-import=docx",
         "--name=SmartEmailWriter",
         "main.py"
     ]

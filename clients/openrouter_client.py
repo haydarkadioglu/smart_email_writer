@@ -28,5 +28,5 @@ class OpenRouterClient(OpenAICompatClient):
             self._client.default_headers = {
                 **self._client.default_headers,
                 "HTTP-Referer": "https://github.com/haydarkadioglu/smart_email_writer",
-                "X-Title": "Smart Email Writer",
+                "X-Title": "SEW AI",
             }

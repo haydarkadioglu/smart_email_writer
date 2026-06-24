@@ -64,7 +64,7 @@ function clearChatMessages() {
     if (el) el.innerHTML = `
         <div class="chat-welcome">
             <div style="font-size:36px;margin-bottom:8px;">🤖</div>
-            <h3 style="margin:0 0 8px;">SmartMail AI</h3>
+            <h3 style="margin:0 0 8px;">SEW AI</h3>
             <p style="color:var(--text-secondary);font-size:13px;">
                 Ask me to draft an email, prepare a list of emails for multiple recipients, 
                 or ask for advice on your message.

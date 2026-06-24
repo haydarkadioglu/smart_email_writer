@@ -53,8 +53,6 @@ class BulkSendMixin:
         ai_provider = bulk_details.get("ai_provider", "gemini")
         ai_model   = bulk_details.get("ai_model", GEMINI_MODEL)
 
-        ai_client = self._get_ai_client(ai_provider, ai_model) if use_ai else None
-        self.bulk_email_sender.ai_client = ai_client
         profile  = self.profile_store.load()
         total    = len(recipients)
         success_count = failed_count = 0
@@ -73,7 +71,7 @@ class BulkSendMixin:
             )
 
             final_subject, final_body, method = self._prepare_email_content(
-                use_ai, ai_client, bulk_details, recipient_obj, provider,
+                use_ai, ai_provider, ai_model, bulk_details, recipient_obj, provider,
                 sender_email, sender_password, profile
             )
 
@@ -128,25 +126,29 @@ class BulkSendMixin:
             self.window.evaluate_js(f"onBulkSendFinished({success_count},{failed_count})")
 
     def _prepare_email_content(
-        self, use_ai, ai_client, bulk_details, recipient_obj,
+        self, use_ai, ai_provider, ai_model, bulk_details, recipient_obj,
         provider, sender_email, sender_password, profile
     ):
-        if use_ai and ai_client:
+        if use_ai:
             try:
-                bulk_req = BulkEmailRequest(
-                    provider=provider,
-                    sender_email=sender_email,
-                    sender_password=sender_password,
-                    subject="", body_template="",
-                    recipients=[recipient_obj],
-                    use_ai_generation=True,
-                    ai_purpose=bulk_details.get("ai_purpose", ""),
-                    ai_tone=bulk_details.get("ai_tone", "Professional"),
-                    ai_language=bulk_details.get("ai_language", "English"),
-                    ai_length=bulk_details.get("ai_length", "Medium (3-4 paragraphs)"),
-                    ai_additional_context=bulk_details.get("ai_additional_context", "")
-                )
-                sub, bdy = self.bulk_email_sender._generate_ai_email(bulk_req, recipient_obj, profile)
+                def do_prep(client, p, m):
+                    self.bulk_email_sender.ai_client = client
+                    bulk_req = BulkEmailRequest(
+                        provider=provider,
+                        sender_email=sender_email,
+                        sender_password=sender_password,
+                        subject="", body_template="",
+                        recipients=[recipient_obj],
+                        use_ai_generation=True,
+                        ai_purpose=bulk_details.get("ai_purpose", ""),
+                        ai_tone=bulk_details.get("ai_tone", "Professional"),
+                        ai_language=bulk_details.get("ai_language", "English"),
+                        ai_length=bulk_details.get("ai_length", "Medium (3-4 paragraphs)"),
+                        ai_additional_context=bulk_details.get("ai_additional_context", "")
+                    )
+                    return self.bulk_email_sender._generate_ai_email(bulk_req, recipient_obj, profile)
+                
+                sub, bdy = self._execute_with_fallback(ai_provider, ai_model, do_prep)
                 return sub, bdy, "AI"
             except Exception:
                 pass  # Fall through to template
@@ -154,7 +156,7 @@ class BulkSendMixin:
         body_tpl    = bulk_details.get("body_template", "")
         sub = self.bulk_email_sender._personalize_email_body(subject_tpl, recipient_obj)
         bdy = self.bulk_email_sender._personalize_email_body(body_tpl, recipient_obj)
-        method = "Template (AI Failed)" if (use_ai and ai_client) else "Template"
+        method = "Template (AI Failed)" if use_ai else "Template"
         return sub, bdy, method
 
     # ── Per-email SMTP send (used by new bulk flow) ────────────────────────

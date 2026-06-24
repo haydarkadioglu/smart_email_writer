@@ -173,7 +173,6 @@ class BulkFileMixin:
                 provider   = settings.get("ai_provider", "gemini")
                 model_name = settings.get(f"{provider}_model", GEMINI_MODEL)
 
-            ai_client = self._get_ai_client(provider, model_name)
             profile   = self.profile_store.load()
 
             emails = []
@@ -188,15 +187,17 @@ class BulkFileMixin:
                         personalized_context += f"- {k}: {v}\n"
 
                 try:
-                    res = ai_client.generate_email(
-                        purpose=purpose,
-                        recipient_name=name,
-                        tone="Professional",
-                        language="Turkish",
-                        additional_context=personalized_context,
-                        profile=profile,
-                        email_length="Medium (3-4 paragraphs)"
-                    )
+                    def do_generate(client, p, m):
+                        return client.generate_email(
+                            purpose=purpose,
+                            recipient_name=name,
+                            tone="Professional",
+                            language="Turkish",
+                            additional_context=personalized_context,
+                            profile=profile,
+                            email_length="Medium (3-4 paragraphs)"
+                        )
+                    res = self._execute_with_fallback(provider, model_name, do_generate)
                     subject = res.subject
                     body    = res.body
                 except Exception:
@@ -228,22 +229,24 @@ class BulkFileMixin:
                 custom_fields=recipient.get("custom_fields", {})
             )
             if use_ai:
-                ai_client = self._get_ai_client(provider, model_name)
-                self.bulk_email_sender.ai_client = ai_client
-                bulk_req = BulkEmailRequest(
-                    provider=Provider.GMAIL,
-                    sender_email="", sender_password="",
-                    subject="", body_template="",
-                    recipients=[recipient_obj],
-                    use_ai_generation=True,
-                    ai_purpose=bulk_details.get("ai_purpose", ""),
-                    ai_tone=bulk_details.get("ai_tone", "Professional"),
-                    ai_language=bulk_details.get("ai_language", "English"),
-                    ai_length=bulk_details.get("ai_length", "Medium (3-4 paragraphs)"),
-                    ai_additional_context=bulk_details.get("ai_additional_context", "")
-                )
+                def do_generate_preview(client, p, m):
+                    self.bulk_email_sender.ai_client = client
+                    bulk_req = BulkEmailRequest(
+                        provider=Provider.GMAIL,
+                        sender_email="", sender_password="",
+                        subject="", body_template="",
+                        recipients=[recipient_obj],
+                        use_ai_generation=True,
+                        ai_purpose=bulk_details.get("ai_purpose", ""),
+                        ai_tone=bulk_details.get("ai_tone", "Professional"),
+                        ai_language=bulk_details.get("ai_language", "English"),
+                        ai_length=bulk_details.get("ai_length", "Medium (3-4 paragraphs)"),
+                        ai_additional_context=bulk_details.get("ai_additional_context", "")
+                    )
+                    return self.bulk_email_sender._generate_ai_email(bulk_req, recipient_obj, profile)
+
                 profile = self.profile_store.load()
-                sub, bdy = self.bulk_email_sender._generate_ai_email(bulk_req, recipient_obj, profile)
+                sub, bdy = self._execute_with_fallback(provider, model_name, do_generate_preview)
                 return {"success": True, "subject": sub, "body": bdy, "method": "AI Generated"}
             else:
                 subject_tpl = bulk_details.get("subject", "")

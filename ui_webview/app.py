@@ -103,6 +103,16 @@ class WebViewAPI(
             and name not in self._PRIVATE_ATTRS
         ]
 
+    # ── Window Controls ────────────────────────────────────────────────────
+    def minimize_window(self) -> None:
+        if self.window: self.window.minimize()
+
+    def toggle_maximize_window(self) -> None:
+        if self.window: self.window.toggle_fullscreen()
+
+    def close_window(self) -> None:
+        if self.window: self.window.destroy()
+
 
 def apply_dark_titlebar(window) -> None:
     """Apply native Immersive Dark Mode to Windows title bar using Win32 API."""
@@ -134,19 +144,18 @@ def run_app():
 
     api    = WebViewAPI()
     window = webview.create_window(
-        title     = "Smart Email Writer ✨",
+        title     = "SEW AI ✨",
         url       = url,
         js_api    = api,
         width     = 1280,
         height    = 860,
         min_size  = (1000, 700),
         resizable = True,
+        frameless = True,
+        easy_drag = False,
         background_color = '#0d0f12',
     )
     api.set_window(window)
-
-    # Register the event to apply immersive dark title bar
-    window.events.shown += lambda: apply_dark_titlebar(window)
 
     webview.start(debug=False)
 

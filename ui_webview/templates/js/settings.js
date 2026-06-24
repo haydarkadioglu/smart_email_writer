@@ -19,11 +19,21 @@ async function saveSettings() {
         window.localApiKeys[providerSel.value] = apiKeyInput.value;
     }
 
+    const chainContainer = document.getElementById('fallback-chain-container');
+    const fallbackRows = chainContainer ? Array.from(chainContainer.querySelectorAll('.fallback-row')) : [];
+    const ai_fallback_chain = fallbackRows.map(row => {
+        return {
+            provider: row.querySelector('.fallback-provider').value,
+            model: row.querySelector('.fallback-model').value
+        };
+    });
+
     const payload = {
         smtp_provider:      getVal('smtp-provider-settings'),
         smtp_email:         getVal('smtp-email-settings'),
         smtp_password:      getVal('smtp-password-settings'),
         ai_provider:        provider,
+        ai_fallback_chain:  ai_fallback_chain,
         default_purpose:    getVal('settings-purpose'),
         model_override:     modelOverride,
         theme:              document.documentElement.getAttribute('data-theme'),
@@ -110,6 +120,7 @@ function bindProfileAndSettingsEvents() {
     document.getElementById('btn-clear-history')?.addEventListener('click', clearHistory);
     document.getElementById('btn-save-settings')?.addEventListener('click', saveSettings);
     document.getElementById('btn-test-smtp')?.addEventListener('click',     testSmtpConnection);
+    document.getElementById('btn-add-fallback')?.addEventListener('click',  () => addFallbackRow());
 
     // Usage stats modal
     document.getElementById('btn-open-usage')?.addEventListener('click', openUsageModal);
@@ -134,3 +145,55 @@ function bindProfileAndSettingsEvents() {
     // Sync sender fields to profile on profile tab open
     document.querySelector('[data-tab="profile"]')?.addEventListener('click', populateProfileForm);
 }
+
+// ── Fallback Chain UI ─────────────────────────────────────────────────────
+function renderFallbackChain() {
+    const container = document.getElementById('fallback-chain-container');
+    if (!container) return;
+    container.innerHTML = "";
+    
+    const chain = (appConfig.settings && appConfig.settings.ai_fallback_chain) || [];
+    chain.forEach(item => addFallbackRow(item.provider, item.model));
+}
+
+function addFallbackRow(prov = "openai", mod = "") {
+    const container = document.getElementById('fallback-chain-container');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.className = 'fallback-row';
+    row.style.display = 'flex';
+    row.style.gap = '10px';
+    row.style.alignItems = 'center';
+
+    const provSelect = document.createElement('select');
+    provSelect.className = 'form-input form-select fallback-provider';
+    provSelect.style.flex = '1';
+    provSelect.innerHTML = PROVIDERS.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
+    provSelect.value = prov;
+
+    const modelSelect = document.createElement('select');
+    modelSelect.className = 'form-input form-select fallback-model';
+    modelSelect.style.flex = '1';
+
+    const updateModels = () => {
+        const p = provSelect.value;
+        const meta = PROVIDERS.find(x => x.id === p);
+        const models = meta ? appConfig[meta.modelsKey] || [] : [];
+        modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+        if (models.includes(mod)) modelSelect.value = mod;
+    };
+    provSelect.addEventListener('change', updateModels);
+    updateModels();
+
+    const rmBtn = document.createElement('button');
+    rmBtn.className = 'btn btn-secondary btn-sm';
+    rmBtn.innerText = '✕';
+    rmBtn.addEventListener('click', () => row.remove());
+
+    row.appendChild(provSelect);
+    row.appendChild(modelSelect);
+    row.appendChild(rmBtn);
+    container.appendChild(row);
+}
+

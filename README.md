@@ -1,4 +1,4 @@
-# 📧 Smart Email Writer
+# 📧 SEW AI
 
 > **AI-Powered Email Generation & Management Tool**
 
@@ -20,6 +20,10 @@ A modern desktop application that uses AI (Gemini, Groq, OpenAI, Claude, DeepSee
 - **Multiple Themes** — Obsidian Dark, Cyberpunk Glass, Emerald Forest, Sunset Glow, Classic Slate
 - **Send History** — Full log of generated and sent emails
 - **Attachments** — Attach files to single emails
+- **AI Fallback Chain** — Set a priority list of providers; if one fails or hits rate limits, SmartMail seamlessly falls back to the next.
+- **Custom Frameless UI** — Native, fully themed custom title bar matching the app's aesthetic.
+- **Chat Assistant** — AI chat interface to brainstorm drafts, analyze emails, and automatically save chats to drafts.
+- **CV to Profile** — Auto-extract user profile details (Name, Role, Company) directly from uploaded PDF or Word CVs.
 - **Standalone EXE** — Build a single `.exe` with PyInstaller
 
 ## 🚀 Quick Start

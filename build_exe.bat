@@ -1,6 +1,6 @@
 @echo off
 echo =================================================
-echo Smart Email Writer - Building Executable
+echo SEW AI - Building Executable
 echo =================================================
 echo.
 

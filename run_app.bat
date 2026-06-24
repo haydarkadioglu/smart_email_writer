@@ -1,13 +1,16 @@
 @echo off
-echo Smart Email Writer - Starting...
+echo SEW AI - Starting...
 echo.
 
-REM Activate virtual environment
-call venv\Scripts\activate
+IF NOT EXIST "%~dp0venv\Scripts\activate.bat" (
+    echo [ERROR] Virtual environment not found. Please run install.bat first.
+    pause
+    exit /b 1
+)
 
-REM Run the application
-echo.
-echo Starting Smart Email Writer Desktop...
+call "%~dp0venv\Scripts\activate.bat"
+
+echo Starting SEW AI Desktop...
 echo.
 python main.py
 

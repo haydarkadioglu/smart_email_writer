@@ -24,7 +24,7 @@ class TemplateStore:
                 {
                     "id": str(uuid.uuid4()),
                     "title": "Follow-Up Meeting",
-                    "subject": "Follow-up: Smart Email Writer Discussion",
+                    "subject": "Follow-up: SEW AI Discussion",
                     "body": "Hi {name},\n\nThank you for taking the time to speak with me earlier regarding {description}.\n\nAs discussed, I've attached more details about our services. Let me know if next Thursday at 2 PM works for a quick follow-up to discuss the next steps.\n\nLooking forward to hearing from you.\n\nBest,\n{my_name}",
                 },
                 {
