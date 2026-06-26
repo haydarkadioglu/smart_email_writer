@@ -54,49 +54,28 @@ class GeminiClient:
 
         profile_text = ""
         if profile:
-            # Include all profile fields for comprehensive context
-            name = profile.get("name")
-            title = profile.get("title")
-            company = profile.get("company")
-            experience = profile.get("experience")
-            location = profile.get("location")
-            phone = profile.get("phone")
-            email = profile.get("email")
-            website = profile.get("website")
-            linkedin = profile.get("linkedin")
-            github = profile.get("github")
-            skills = profile.get("skills")
-            summary = profile.get("summary")
-            achievements = profile.get("achievements")
-            
             extras = []
-            if name:
-                extras.append(f"Name: {name}")
-            if title:
-                extras.append(f"Title: {title}")
-            if company:
-                extras.append(f"Company: {company}")
-            if experience:
-                extras.append(f"Experience: {experience}")
-            if location:
-                extras.append(f"Location: {location}")
-            if phone:
-                extras.append(f"Phone: {phone}")
-            if email:
-                extras.append(f"Email: {email}")
-            if website:
-                extras.append(f"Website: {website}")
-            if linkedin:
-                extras.append(f"LinkedIn: {linkedin}")
-            if github:
-                extras.append(f"GitHub: {github}")
-            if skills:
-                extras.append(f"Skills: {skills}")
-            if summary:
-                extras.append(f"Summary: {summary}")
-            if achievements:
-                extras.append(f"Achievements: {achievements}")
-            
+            friendly_names = {
+                "name": "Name",
+                "email": "Email",
+                "company": "Company",
+                "role": "Role/Title",
+                "website": "Website",
+                "signature": "Email Signature",
+                "about_me": "About Me / General Info",
+                "experience": "Experience",
+                "location": "Location",
+                "phone": "Phone",
+                "linkedin": "LinkedIn",
+                "github": "GitHub",
+                "skills": "Skills",
+                "summary": "Summary",
+                "achievements": "Achievements"
+            }
+            for k, v in profile.items():
+                if v:
+                    label = friendly_names.get(k, k.replace("_", " ").title())
+                    extras.append(f"{label}: {v}")
             if extras:
                 profile_text = "\n".join(extras)
 
@@ -206,7 +185,28 @@ class GeminiClient:
 
         profile_text = ""
         if profile:
-            extras = [f"{k.capitalize()}: {v}" for k, v in profile.items() if v]
+            extras = []
+            friendly_names = {
+                "name": "Name",
+                "email": "Email",
+                "company": "Company",
+                "role": "Role/Title",
+                "website": "Website",
+                "signature": "Email Signature",
+                "about_me": "About Me / General Info",
+                "experience": "Experience",
+                "location": "Location",
+                "phone": "Phone",
+                "linkedin": "LinkedIn",
+                "github": "GitHub",
+                "skills": "Skills",
+                "summary": "Summary",
+                "achievements": "Achievements"
+            }
+            for k, v in profile.items():
+                if v:
+                    label = friendly_names.get(k, k.replace("_", " ").title())
+                    extras.append(f"{label}: {v}")
             if extras:
                 profile_text = "\n".join(extras)
 

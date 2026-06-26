@@ -536,7 +536,12 @@
                     <input id="profile-website" type="url"   class="form-input" placeholder="https://…">
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label">About Me (General Bio / Skills / Background for AI Context)</label>
+                <textarea id="profile-about-me" class="form-input" rows="4"
+                    placeholder="E.g., I am a Computer Engineer with 5 years of experience in AI. I specialize in backend development, NLP, and machine learning... (AI will use this info to write personalized emails)"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 16px;">
                 <label class="form-label">Email Signature</label>
                 <textarea id="profile-signature" class="form-input" rows="4"
                     placeholder="Best regards,&#10;Jane Smith | Acme Corp"></textarea>
@@ -581,7 +586,14 @@
                             <span>Save as Draft</span>
                         </label>
                     </div>
+                    <!-- Attached file preview -->
+                    <div id="chat-attachment-preview" style="display:none; align-items:center; gap:8px; margin-bottom:8px; padding:6px 10px; background:var(--bg-tertiary); border-radius:6px; border:1px solid var(--border-color); font-size:13px; color:var(--text-primary); width:fit-content;">
+                        <span style="font-weight:500;">📎 Attached:</span>
+                        <span id="chat-attachment-name" style="text-decoration:underline;">filename.pdf</span>
+                        <span id="btn-chat-remove-attachment" style="cursor:pointer; color:var(--danger-color); font-weight:bold; margin-left:6px; font-size:14px;">✕</span>
+                    </div>
                     <div class="chat-input-row">
+                        <button id="btn-chat-attach" class="btn btn-secondary chat-send-btn" title="Attach file (PDF, DOCX, TXT, CSV, Excel)" style="background:var(--bg-tertiary); border:1px solid var(--border-color); font-size:16px;">📎</button>
                         <textarea id="chat-input" class="form-input chat-textarea"
                             placeholder="Ask me to write an email to someone, or a batch of emails…"
                             rows="2"></textarea>

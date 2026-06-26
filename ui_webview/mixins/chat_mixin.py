@@ -68,22 +68,46 @@ class ChatMixin:
         Optionally save resulting draft(s) to DraftStore.
 
         payload:
-          session_id   str   - existing session id
-          message      str   - user message text
-          save_as_draft bool - whether to auto-save generated drafts
+          session_id      str  - existing session id
+          message         str  - user message text
+          save_as_draft   bool - whether to auto-save generated drafts
+          attachment_path str  - optional path to attached file
         """
         try:
-            session_id   = payload.get("session_id", "")
-            user_message = payload.get("message", "").strip()
-            save_as_draft = payload.get("save_as_draft", True)
+            session_id      = payload.get("session_id", "")
+            user_message    = payload.get("message", "").strip()
+            save_as_draft   = payload.get("save_as_draft", True)
+            attachment_path = payload.get("attachment_path", "").strip()
 
-            if not user_message:
+            if not user_message and not attachment_path:
                 return {"success": False, "error": "Empty message"}
 
             settings = self.settings_store.load()
             provider   = settings.get("ai_provider", "gemini")
             model_name = settings.get(provider + "_model", "")
             profile    = self.profile_store.load()
+
+            # ── Read Attachment content for context ──────────────────────────
+            file_context = ""
+            if attachment_path:
+                from pathlib import Path
+                p = Path(attachment_path)
+                if p.exists():
+                    ext = p.suffix.lower()
+                    try:
+                        if ext in ['.pdf', '.docx', '.txt', '.md']:
+                            file_text = self._extract_text(p, ext)
+                            file_context = f"\n\n--- ATTACHED FILE CONTENT ({p.name}) ---\n{file_text[:8000]}\n--- END ATTACHED FILE ---\n"
+                        elif ext in ['.csv', '.xlsx', '.xls']:
+                            import pandas as pd
+                            if ext == '.csv':
+                                df = pd.read_csv(p)
+                            else:
+                                df = pd.read_excel(p)
+                            df_str = df.head(50).to_string()
+                            file_context = f"\n\n--- ATTACHED FILE CONTENT ({p.name}) ---\n{df_str}\n--- END ATTACHED FILE ---\n"
+                    except Exception as fe:
+                        file_context = f"\n\n[Error reading attached file {p.name}: {fe}]\n"
 
             # ── Build conversation context ──────────────────────────────────
             session = self.chat_store.get_session(session_id)
@@ -107,6 +131,7 @@ class ChatMixin:
                 SYSTEM_PROMPT
                 + "\n\n"
                 + profile_context
+                + file_context
                 + "Conversation so far:\n"
                 + history_text
                 + f"User: {user_message}\n\nAssistant:"
@@ -120,7 +145,13 @@ class ChatMixin:
             raw_response = self._execute_with_fallback(provider, model_name, do_chat)
 
             # ── Save user message ───────────────────────────────────────────
-            self.chat_store.append_message(session_id, "user", user_message)
+            saved_user_message = user_message
+            if attachment_path:
+                import os
+                filename = os.path.basename(attachment_path)
+                saved_user_message = f"📎 [Attached: {filename}]\n{user_message}"
+            
+            self.chat_store.append_message(session_id, "user", saved_user_message)
 
             # ── Parse AI response ───────────────────────────────────────────
             clean = raw_response.strip().strip("```json").strip("```").strip()
@@ -136,10 +167,12 @@ class ChatMixin:
 
             if msg_type == "draft" and save_as_draft:
                 for email_data in parsed.get("emails", []):
+                    attachments = [attachment_path] if attachment_path else []
                     draft = self.draft_store.create(
                         to=email_data.get("to", ""),
                         subject=email_data.get("subject", ""),
                         body=email_data.get("body", ""),
+                        attachments=attachments,
                         source="chat",
                     )
                     draft_ids.append(draft["id"])

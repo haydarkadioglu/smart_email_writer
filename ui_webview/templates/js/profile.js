@@ -9,6 +9,7 @@ function populateProfileForm() {
     setVal('profile-company',   p.company   || '');
     setVal('profile-role',      p.role      || '');
     setVal('profile-website',   p.website   || '');
+    setVal('profile-about-me',  p.about_me  || '');
     setVal('profile-signature', p.signature || '');
 }
 
@@ -22,6 +23,7 @@ async function saveProfile() {
             company:   getVal('profile-company'),
             role:      getVal('profile-role'),
             website:   getVal('profile-website'),
+            about_me:  getVal('profile-about-me'),
             signature: getVal('profile-signature'),
         }
     });

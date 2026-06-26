@@ -13,7 +13,29 @@ from models.email_models import GeneratedEmail
 def _build_profile_text(profile: Optional[Dict[str, Any]]) -> str:
     if not profile:
         return ""
-    return "\n".join(f"{k.capitalize()}: {v}" for k, v in profile.items() if v)
+    friendly_names = {
+        "name": "Name",
+        "email": "Email",
+        "company": "Company",
+        "role": "Role/Title",
+        "website": "Website",
+        "signature": "Email Signature",
+        "about_me": "About Me / General Info",
+        "experience": "Experience",
+        "location": "Location",
+        "phone": "Phone",
+        "linkedin": "LinkedIn",
+        "github": "GitHub",
+        "skills": "Skills",
+        "summary": "Summary",
+        "achievements": "Achievements"
+    }
+    extras = []
+    for k, v in profile.items():
+        if v:
+            label = friendly_names.get(k, k.replace("_", " ").title())
+            extras.append(f"{label}: {v}")
+    return "\n".join(extras)
 
 
 def _parse_json_response(text: str, fallback_subject: str, fallback_body: str):

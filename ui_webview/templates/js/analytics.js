@@ -112,10 +112,10 @@ async function uploadAndParseCV() {
     if (p.company) setVal('profile-company', p.company);
     if (p.role)    setVal('profile-role',    p.role);
     if (p.website) setVal('profile-website', p.website);
-    // signature = summary
+    // about_me = summary
     if (p.summary) {
-        const sig = document.getElementById('profile-signature');
-        if (sig && !sig.value) sig.value = p.summary;
+        const aboutMe = document.getElementById('profile-about-me');
+        if (aboutMe && !aboutMe.value) aboutMe.value = p.summary;
     }
     showFlash('flash-profile', '✔ Profile auto-filled from CV');
 }
