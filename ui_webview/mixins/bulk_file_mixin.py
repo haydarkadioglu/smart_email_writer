@@ -173,8 +173,9 @@ class BulkFileMixin:
                 provider   = settings.get("ai_provider", "gemini")
                 model_name = settings.get(f"{provider}_model", GEMINI_MODEL)
 
-            language    = payload.get("language", "Turkish")
-            attachments = payload.get("attachments", [])
+            language     = payload.get("language", "Turkish")
+            email_length = payload.get("email_length", "Short (1-2 paragraphs)")
+            attachments  = payload.get("attachments", [])
 
             profile = self.profile_store.load()
             total   = len(rows)
@@ -207,7 +208,7 @@ class BulkFileMixin:
                 try:
                     # Capture loop variables in a default-arg closure to avoid late binding
                     def do_generate(client, p, m,
-                                    _n=_name, _pur=purpose, _ctx=personalized_context, _pr=profile, _lang=language):
+                                    _n=_name, _pur=purpose, _ctx=personalized_context, _pr=profile, _lang=language, _len=email_length):
                         return client.generate_email(
                             purpose=_pur,
                             recipient_name=_n,
@@ -215,7 +216,7 @@ class BulkFileMixin:
                             language=_lang,
                             additional_context=_ctx,
                             profile=_pr,
-                            email_length="Medium (3-4 paragraphs)"
+                            email_length=_len
                         )
                     res     = self._execute_with_fallback(provider, model_name, do_generate)
                     subject = res.subject

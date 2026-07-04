@@ -141,13 +141,20 @@ async function handleBulkGenerate() {
     const btn = document.getElementById('btn-bulk-generate');
     setBtnLoading(btn, true, "⏳ Generating...");
 
+    let rowsToProcess = uploadedBulkData;
+    const limitVal = parseInt(getVal('bulk-limit-count'));
+    if (!isNaN(limitVal) && limitVal > 0) {
+        rowsToProcess = uploadedBulkData.slice(0, limitVal);
+    }
+
     const payload = {
-        rows:        uploadedBulkData,
+        rows:        rowsToProcess,
         purpose:     getVal('bulk-common-purpose'),
         ai_provider: getActiveProvider(),
         model:       getActiveModel(),
         subject:     getVal('bulk-subject-template'),
         language:    getVal('bulk-email-language') || 'Turkish',
+        email_length: getVal('bulk-email-length') || 'Short (1-2 paragraphs)',
         attachments: bulkAttachments || [],
     };
     const result = await pywebview.api.generate_bulk(payload);
@@ -241,6 +248,9 @@ async function handleBulkSendAll() {
             ai_provider: getActiveProvider(),
             model:       getActiveModel(),
             subject:     getVal('bulk-subject-template'),
+            language:    getVal('bulk-email-language') || 'Turkish',
+            email_length: getVal('bulk-email-length') || 'Short (1-2 paragraphs)',
+            attachments: bulkAttachments || [],
         };
         const result = await pywebview.api.generate_bulk(payload);
         if (genBtn) setBtnLoading(genBtn, false);

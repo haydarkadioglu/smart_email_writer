@@ -342,6 +342,14 @@
                                 <option value="Russian">🇷🇺 Russian</option>
                             </select>
                         </div>
+                        <div class="form-group" style="width:180px;">
+                            <label class="form-label">Email Length</label>
+                            <select id="bulk-email-length" class="form-input">
+                                <option value="Short (1-2 paragraphs)">⚡ Short (1-2 para)</option>
+                                <option value="Medium (3-4 paragraphs)">📄 Medium (3-4 para)</option>
+                                <option value="Long (5+ paragraphs)">📜 Long (5+ para)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -353,13 +361,18 @@
                 </div>
 
                 <!-- AI + SMTP row -->
-                <div class="bulk-settings-row">
-                    <div class="form-group" style="flex:1">
+                <div class="bulk-settings-row" style="display:flex;gap:12px;align-items:center;">
+                    <div class="form-group" style="width:120px">
                         <label class="form-label">Delay (seconds)</label>
                         <input id="email-delay-seconds" type="number" class="form-input"
                             value="2" min="0" max="60">
                     </div>
-                    <div class="form-group checkbox-align">
+                    <div class="form-group" style="width:140px">
+                        <label class="form-label">Limit Recipients</label>
+                        <input id="bulk-limit-count" type="number" class="form-input"
+                            placeholder="All" min="1">
+                    </div>
+                    <div class="form-group checkbox-align" style="margin-top:20px;">
                         <label>
                             <input id="bulk-dry-run" type="checkbox"> Dry run (no actual send)
                         </label>
