@@ -148,6 +148,7 @@ async function handleBulkGenerate() {
         model:       getActiveModel(),
         subject:     getVal('bulk-subject-template'),
         language:    getVal('bulk-email-language') || 'Turkish',
+        attachments: bulkAttachments || [],
     };
     const result = await pywebview.api.generate_bulk(payload);
     setBtnLoading(btn, false);
@@ -159,6 +160,12 @@ async function handleBulkGenerate() {
     document.getElementById('approval-section').style.display = 'block';
     showApprovalEmail(currentApprovalIdx);
     updateBulkProgress(0, approvalQueue.length);
+
+    // Auto-load drafts in the background so they are ready in drafts tab
+    if (typeof loadDrafts === 'function') {
+        loadDrafts();
+    }
+    showFlash('flash-bulk', `✔ Generated ${approvalQueue.length} emails and saved to Drafts!`, false);
 }
 
 // ── Column Mapping ────────────────────────────────────────────────────────

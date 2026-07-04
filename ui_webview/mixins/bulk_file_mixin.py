@@ -174,6 +174,7 @@ class BulkFileMixin:
                 model_name = settings.get(f"{provider}_model", GEMINI_MODEL)
 
             language    = payload.get("language", "Turkish")
+            attachments = payload.get("attachments", [])
 
             profile = self.profile_store.load()
             total   = len(rows)
@@ -227,7 +228,28 @@ class BulkFileMixin:
                         subject = str(subject).replace(f"{{{{{k}}}}}", str(v))
                         body    = str(body).replace(f"{{{{{k}}}}}", str(v))
 
-                emails.append({"to": _email, "subject": subject, "body": body, "recipient_name": _name})
+                # Save generated email to drafts store along with attachments
+                draft_id = None
+                if hasattr(self, "draft_store") and self.draft_store:
+                    try:
+                        draft = self.draft_store.create(
+                            to=_email,
+                            subject=subject,
+                            body=body,
+                            attachments=attachments,
+                            source="bulk"
+                        )
+                        draft_id = draft.get("id")
+                    except Exception:
+                        pass
+
+                emails.append({
+                    "to": _email,
+                    "subject": subject,
+                    "body": body,
+                    "recipient_name": _name,
+                    "draft_id": draft_id
+                })
 
             # Final progress update
             if hasattr(self, "window") and self.window:
