@@ -150,7 +150,18 @@ class OpenAICompatClient:
         system_prompt = textwrap.dedent(f"""
             You are a professional email writing assistant.
             Write a complete, {tone.lower()} email in {language}.
-            Length: {email_length}.
+            Email length rules (STRICT):
+            - "Very Short (1 paragraph)": Use EXACTLY this structure, each part on its OWN line separated by a blank line:
+                Greeting (e.g. Dear [Name],)
+                [blank line]
+                ONE paragraph of 2-3 sentences max.
+                [blank line]
+                Closing (e.g. Best regards,) + sender name.
+                NEVER merge the greeting, body and closing into one continuous block.
+            - "Short (1-2 paragraphs)": greeting + 1-2 short paragraphs + closing on separate lines.
+            - "Medium (3-4 paragraphs)": standard structured email.
+            - "Long (5+ paragraphs)": detailed email.
+            Current requested length: {email_length}.
 
             CRITICAL RULES:
             1. ATTACHMENTS: Only reference files that are explicitly mentioned as attached in the prompt/context. If only a CV/resume is attached, do NOT write "including my CV and academic certificates / references / transcripts / cover letter". ONLY mention the CV. Never assume or hallucinate attachments that were not uploaded by the user.

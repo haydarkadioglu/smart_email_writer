@@ -129,8 +129,17 @@ class GeminiClient:
             - Keep the tone {tone.lower()} and language {language}
             - Make it engaging and relevant to the recipient
             - Include proper greeting and closing
-            - Follow the specified email length: {email_length}
-            - For "Very Short": write only 1 concise paragraph but still include greeting and closing 
+            - Follow the specified email length strictly:
+              * "Very Short (1 paragraph)": The email body must have EXACTLY this structure (each part on its OWN line, separated by a blank line):
+                  Greeting line (e.g. Dear ...),
+                  [blank line]
+                  ONE short paragraph (2-3 sentences max) covering the purpose,
+                  [blank line]
+                  Closing line (e.g. Best regards, / Sincerely,) + sender name.
+                  Do NOT merge the greeting, body, and closing into a single block of text.
+              * "Short (1-2 paragraphs)": greeting + 1-2 short paragraphs + closing, all on separate lines.
+              * "Medium (3-4 paragraphs)": standard multi-paragraph email.
+              * "Long (5+ paragraphs)": detailed email.
             - Do NOT repeat the instructions or context verbatim
             - Use the profile information naturally in the email content
             - ATTACHMENTS RULE: Only reference files that are explicitly mentioned as attached in the context/prompt (e.g., in ADDITIONAL CONTEXT or user files). If only a CV/resume is attached, do NOT write "including my CV and academic certificates / references / transcripts / cover letter". ONLY mention the CV. Never assume or hallucinate attachments that were not uploaded by the user.
