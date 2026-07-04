@@ -102,17 +102,37 @@ function renderCustomFieldInputs(columns) {
 
 // ── Preview Emails ────────────────────────────────────────────────────────
 async function handleBulkPreview() {
-    const purpose = getVal('bulk-common-purpose');
-    if (!purpose && uploadedBulkData.length) {
-        alert("Enter a common email purpose first."); return;
-    }
+    if (!uploadedBulkData.length) { alert("Upload and map a recipient file first."); return; }
+
+    const btn = document.getElementById('btn-bulk-preview');
+    setBtnLoading(btn, true, '⏳ Previewing...');
+
     const result = await pywebview.api.preview_bulk({
         rows:    uploadedBulkData,
-        purpose,
+        purpose: getVal('bulk-common-purpose'),
         subject: getVal('bulk-subject-template'),
     });
+    setBtnLoading(btn, false);
     if (!result.success) { alert(result.error); return; }
-    renderBulkPreview(result.previews);
+
+    // Render preview table from the returned previews array
+    const container = document.getElementById('bulk-data-preview');
+    const previews  = result.previews || [];
+    if (!previews.length) { container.innerHTML = '<p>No preview available.</p>'; return; }
+
+    const thHTML   = '<th>#</th><th>Name</th><th>Email</th><th>Subject</th>';
+    const rowsHTML = previews.map((p, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td>${p.Name || ''}</td>
+            <td>${p.Email || ''}</td>
+            <td>${p.Subject || ''}</td>
+        </tr>`).join('');
+    container.innerHTML = `
+        <table class="data-table">
+            <thead><tr>${thHTML}</tr></thead>
+            <tbody>${rowsHTML}</tbody>
+        </table>`;
 }
 
 // ── Generate All ──────────────────────────────────────────────────────────
