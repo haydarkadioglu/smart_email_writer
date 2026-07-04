@@ -322,10 +322,26 @@
                         <textarea id="bulk-common-purpose" class="form-input" rows="3"
                             placeholder="E.g. Invite them to our webinar on…"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Subject Template (use {{name}}, {{company}})</label>
-                        <input id="bulk-subject-template" type="text" class="form-input"
-                            placeholder="Hi {{name}}, exclusive invite from…">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Subject Template (use {{name}}, {{company}})</label>
+                            <input id="bulk-subject-template" type="text" class="form-input"
+                                placeholder="Hi {{name}}, exclusive invite from…">
+                        </div>
+                        <div class="form-group" style="width:160px;">
+                            <label class="form-label">Email Language</label>
+                            <select id="bulk-email-language" class="form-input">
+                                <option value="Turkish">🇹🇷 Turkish</option>
+                                <option value="English">🇬🇧 English</option>
+                                <option value="German">🇩🇪 German</option>
+                                <option value="French">🇫🇷 French</option>
+                                <option value="Spanish">🇪🇸 Spanish</option>
+                                <option value="Italian">🇮🇹 Italian</option>
+                                <option value="Dutch">🇳🇱 Dutch</option>
+                                <option value="Arabic">🇸🇦 Arabic</option>
+                                <option value="Russian">🇷🇺 Russian</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

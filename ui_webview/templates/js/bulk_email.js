@@ -147,6 +147,7 @@ async function handleBulkGenerate() {
         ai_provider: getActiveProvider(),
         model:       getActiveModel(),
         subject:     getVal('bulk-subject-template'),
+        language:    getVal('bulk-email-language') || 'Turkish',
     };
     const result = await pywebview.api.generate_bulk(payload);
     setBtnLoading(btn, false);
