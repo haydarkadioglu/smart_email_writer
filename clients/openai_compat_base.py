@@ -103,6 +103,24 @@ class OpenAICompatClient:
         )
         return resp.choices[0].message.content if resp and resp.choices else ""
 
+    def _call_raw_stream(self, prompt: str, chunk_cb=None) -> str:
+        """Stream a raw prompt; calls chunk_cb(text) for each delta. Returns full text."""
+        if not self._configured:
+            raise RuntimeError(str(self._init_error))
+        full_text = ""
+        with self._client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            stream=True,
+        ) as stream:
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content or "" if chunk.choices else ""
+                full_text += delta
+                if delta and chunk_cb:
+                    chunk_cb(delta)
+        return full_text
+
     def _chat(self, system: str, user: str) -> str:
         if not self._configured:
             raise RuntimeError(str(self._init_error))

@@ -39,6 +39,22 @@ class GeminiClient:
             full_text += chunk.text or ""
         return full_text
 
+    def _call_raw_stream(self, prompt: str, chunk_cb=None) -> str:
+        """Stream a raw prompt; calls chunk_cb(text) for each chunk. Returns full text."""
+        if not self._configured or self._client is None:
+            raise RuntimeError("Gemini client is not configured. Check your GEMINI_API_KEY.")
+        full_text = ""
+        for chunk in self._client.models.generate_content_stream(
+            model=self.model_name,
+            contents=[types.Content(role="user", parts=[types.Part.from_text(text=prompt)])],
+            config=types.GenerateContentConfig(),
+        ):
+            text = chunk.text or ""
+            full_text += text
+            if text and chunk_cb:
+                chunk_cb(text)
+        return full_text
+
     def generate_email(
         self,
         purpose: str,

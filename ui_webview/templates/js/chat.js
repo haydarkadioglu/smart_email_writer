@@ -165,13 +165,15 @@ async function sendChatMessage() {
 
     removeTypingIndicator(typingId);
 
+    // The streaming bubble is created by Python via evaluate_js during the call.
+    // When the API returns, finalize it (add draft badges, handle plain-text format).
     if (!res.success) {
         appendChatBubble('assistant', '⚠ Error: ' + res.error);
         await loadChatSessions();
         return;
     }
 
-    appendChatBubble('assistant', res.message, res.draft_ids);
+    finalizeStreamingBubble(res.stream_id, res.message, res.draft_ids);
     if (res.draft_ids && res.draft_ids.length > 0) {
         showFlash('flash-chat', `✔ ${res.draft_ids.length} draft(s) saved`, false);
     }
@@ -251,6 +253,66 @@ function appendTypingIndicator(id) {
 
 function removeTypingIndicator(id) {
     document.getElementById(id)?.remove();
+}
+
+// ── Streaming bubble helpers ──────────────────────────────────────────────
+function createStreamingBubble(streamId) {
+    const el = document.getElementById('chat-messages');
+    if (!el) return;
+    // Remove welcome screen if present
+    const welcome = el.querySelector('.chat-welcome');
+    if (welcome) welcome.remove();
+    // Remove existing typing indicators
+    el.querySelectorAll('.chat-typing-dots').forEach(d => d.closest('.chat-bubble')?.remove());
+
+    el.insertAdjacentHTML('beforeend', `
+        <div id="${streamId}" class="chat-bubble chat-bubble-ai">
+            <div class="chat-bubble-content stream-content" style="white-space:pre-wrap;"></div>
+            <span class="stream-cursor">▋</span>
+        </div>`);
+    el.scrollTop = el.scrollHeight;
+}
+
+function appendChatStreamChunk(streamId, text) {
+    const bubble = document.getElementById(streamId);
+    if (!bubble) return;
+    const content = bubble.querySelector('.stream-content');
+    if (content) {
+        content.textContent += text;
+    }
+    const el = document.getElementById('chat-messages');
+    if (el) el.scrollTop = el.scrollHeight;
+}
+
+function finalizeStreamingBubble(streamId, finalMessage, draftIds) {
+    const bubble = streamId ? document.getElementById(streamId) : null;
+    if (!bubble) {
+        // Fallback: no streaming bubble found, just append normally
+        appendChatBubble('assistant', finalMessage || '', draftIds);
+        return;
+    }
+    // Remove blinking cursor
+    bubble.querySelector('.stream-cursor')?.remove();
+
+    // Replace raw streamed text with properly formatted final message
+    const content = bubble.querySelector('.stream-content');
+    if (content && finalMessage) {
+        content.innerHTML = escapeHtml(finalMessage).replace(/\n/g, '<br>');
+    }
+
+    // Add draft badges if present
+    if (draftIds && draftIds.length) {
+        const badges = document.createElement('div');
+        badges.className = 'chat-draft-badges';
+        badges.innerHTML = draftIds.map(id => `
+            <button class="chat-draft-badge" onclick="openDraftFromChat('${id}')">
+                📋 View Draft
+            </button>`).join('');
+        bubble.appendChild(badges);
+    }
+
+    const el = document.getElementById('chat-messages');
+    if (el) el.scrollTop = el.scrollHeight;
 }
 
 function openDraftFromChat(draftId) {

@@ -180,8 +180,42 @@ class ChatMixin:
                 + f"User: {user_message}\n\nAssistant:"
             )
 
+            import uuid, json as _json
+            stream_id = "stream-" + uuid.uuid4().hex[:8]
+
+            # Create the streaming bubble and remove typing indicator via JS
+            if hasattr(self, "window") and self.window:
+                try:
+                    self.window.evaluate_js(
+                        f"createStreamingBubble('{stream_id}')"
+                    )
+                except Exception:
+                    pass
+
+            # ── Stream response token by token ──────────────────────────────
+            raw_response_parts: list = []
+
+            def on_chunk(text: str) -> None:
+                raw_response_parts.append(text)
+                if hasattr(self, "window") and self.window:
+                    try:
+                        # Escape the chunk for safe JS string embedding
+                        safe = (_json.dumps(text)          # produces "\"...\""
+                                .strip('"'))               # strip the outer quotes
+                        self.window.evaluate_js(
+                            f"appendChatStreamChunk('{stream_id}', \"{safe}\")"
+                        )
+                    except Exception:
+                        pass
+
             def do_chat(client, p, m):
-                raw = client._call_raw(full_prompt)
+                # Use streaming if available, else fall back to normal
+                if hasattr(client, "_call_raw_stream"):
+                    raw = client._call_raw_stream(full_prompt, chunk_cb=on_chunk)
+                else:
+                    raw = client._call_raw(full_prompt)
+                    # Simulate one chunk so the bubble gets content
+                    on_chunk(raw)
                 self._log_usage(p, m, full_prompt, raw)
                 return raw
 
@@ -260,6 +294,7 @@ class ChatMixin:
                 "draft_ids":            draft_ids,
                 "continuation_needed":  continuation_needed,
                 "partial_json":         partial_json,
+                "stream_id":            stream_id,
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
