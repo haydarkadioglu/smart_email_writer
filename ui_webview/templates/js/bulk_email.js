@@ -154,7 +154,7 @@ async function handleBulkGenerate() {
         model:       getActiveModel(),
         subject:     getVal('bulk-subject-template'),
         language:    getVal('bulk-email-language') || 'Turkish',
-        email_length: getVal('bulk-email-length') || 'Short (1-2 paragraphs)',
+        email_length: getVal('bulk-email-length') || 'Very Short (1 paragraph)',
         attachments: bulkAttachments || [],
     };
     const result = await pywebview.api.generate_bulk(payload);
@@ -249,7 +249,7 @@ async function handleBulkSendAll() {
             model:       getActiveModel(),
             subject:     getVal('bulk-subject-template'),
             language:    getVal('bulk-email-language') || 'Turkish',
-            email_length: getVal('bulk-email-length') || 'Short (1-2 paragraphs)',
+            email_length: getVal('bulk-email-length') || 'Very Short (1 paragraph)',
             attachments: bulkAttachments || [],
         };
         const result = await pywebview.api.generate_bulk(payload);

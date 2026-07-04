@@ -174,7 +174,7 @@ class BulkFileMixin:
                 model_name = settings.get(f"{provider}_model", GEMINI_MODEL)
 
             language     = payload.get("language", "Turkish")
-            email_length = payload.get("email_length", "Short (1-2 paragraphs)")
+            email_length = payload.get("email_length", "Very Short (1 paragraph)")
             attachments  = payload.get("attachments", [])
 
             profile = self.profile_store.load()
