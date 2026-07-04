@@ -23,6 +23,8 @@ When the user asks a general question or makes a request that is NOT about draft
 
 When the user asks you to prepare a list / batch of emails for multiple people, include multiple objects in the "emails" array.
 Always write emails that are professional, personalised and concise.
+
+You have access to the user's profile details under "User Profile / Identity". If the user asks about who they are, their background, or their experience, or asks you to write an email on their behalf, you MUST use their profile context to answer them accurately and personalize the content. Do NOT say you don't have information about them, as the profile is provided in the prompt.
 """
 
 
@@ -121,11 +123,34 @@ class ChatMixin:
 
             profile_context = ""
             if profile:
-                profile_context = (
-                    f"Sender profile: {profile.get('name','')} "
-                    f"<{profile.get('email','')}>, "
-                    f"{profile.get('role','')} at {profile.get('company','')}.\n"
-                )
+                friendly_names = {
+                    "name": "Name",
+                    "email": "Email",
+                    "company": "Company",
+                    "role": "Role/Title",
+                    "website": "Website",
+                    "signature": "Email Signature",
+                    "about_me": "About Me / General Info",
+                    "experience": "Experience",
+                    "location": "Location",
+                    "phone": "Phone",
+                    "linkedin": "LinkedIn",
+                    "github": "GitHub",
+                    "skills": "Skills",
+                    "summary": "Summary",
+                    "achievements": "Achievements"
+                }
+                extras = []
+                for k, v in profile.items():
+                    if v:
+                        label = friendly_names.get(k, k.replace("_", " ").title())
+                        extras.append(f"{label}: {v}")
+                if extras:
+                    profile_context = (
+                        "User Profile / Identity (This is the profile of the user you are talking to and writing emails for):\n"
+                        + "\n".join(extras)
+                        + "\n\n"
+                    )
 
             full_prompt = (
                 SYSTEM_PROMPT
@@ -190,5 +215,57 @@ class ChatMixin:
                 "emails":     parsed.get("emails", []) if msg_type == "draft" else [],
                 "draft_ids":  draft_ids,
             }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def chat_generate_user_summary(self, payload: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Generate a summary of the user based on the entire chat conversation history,
+        and return it to be saved/edited in the 'About Me' field.
+        """
+        try:
+            # Load all sessions and combine messages to get context about the user
+            sessions = self.chat_store._load()
+            if not sessions:
+                return {"success": False, "error": "No chat sessions found. Start chatting first!"}
+
+            # Gather up to 50 latest messages across all sessions to extract user background
+            messages_text = ""
+            count = 0
+            for session in sessions:
+                for msg in session.get("messages", []):
+                    role_label = "User" if msg["role"] == "user" else "Assistant"
+                    messages_text = f"{role_label}: {msg['content']}\n\n" + messages_text
+                    count += 1
+                    if count >= 50:
+                        break
+                if count >= 50:
+                    break
+
+            if not messages_text.strip():
+                return {"success": False, "error": "Chat history is empty. Talk to the AI first!"}
+
+            prompt = (
+                "Based on the following chat conversation, extract key information about the user "
+                "(their profession, company, skills, background, projects, or email writing preferences they mentioned). "
+                "Write a concise, professional first-person summary ('I am...') of the user's profile/background "
+                "in Turkish (or the primary language they chat in). "
+                "This summary will help the AI personalize future emails. "
+                "Return ONLY the summary text (max 3-4 sentences). Do NOT wrap it in JSON, markdown, or explanation.\n\n"
+                "Chat History:\n" + messages_text
+            )
+
+            settings = self.settings_store.load()
+            provider   = settings.get("ai_provider", "gemini")
+            model_name = settings.get(provider + "_model", "")
+
+            def do_summarize(client, p, m):
+                raw = client._call_raw(prompt)
+                return raw.strip()
+
+            summary = self._execute_with_fallback(provider, model_name, do_summarize)
+            summary = summary.strip().strip("```").strip()
+            
+            return {"success": True, "summary": summary}
         except Exception as e:
             return {"success": False, "error": str(e)}

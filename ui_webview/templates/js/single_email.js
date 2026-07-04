@@ -244,7 +244,41 @@ async function handleSendSingle() {
     });
     setBtnLoading(btn, false);
     showFlash('flash-single', result.success ? "✔ Sent!" : "✘ " + result.error);
-    if (result.success && typeof loadHistory === 'function') loadHistory();
+    if (result.success) {
+        // Clear all fields
+        setVal('receiver-name', '');
+        setVal('receiver-company', '');
+        setVal('receiver-email', '');
+        setVal('single-purpose', '');
+        setVal('email-subject', '');
+        setVal('draft-output', '');
+        setVal('refine-instruction', '');
+
+        // Clear attachments list
+        const attachList = document.getElementById('attachment-list');
+        if (attachList) attachList.innerHTML = '';
+
+        // Reset tone analysis display
+        const toneResults = document.getElementById('tone-results');
+        const tonePl = document.getElementById('tone-placeholder');
+        if (toneResults) toneResults.style.display = 'none';
+        if (tonePl) tonePl.style.display = 'block';
+
+        // Re-run editor analysis (this resets the stats since draft-output is empty)
+        runEditorAnalysis();
+
+        // Clear console content & hide after delay
+        const consoleEl = document.getElementById('smtp-console-single');
+        if (consoleEl) {
+            setTimeout(() => {
+                consoleEl.style.display = 'none';
+                const consolePre = consoleEl.querySelector('pre');
+                if (consolePre) consolePre.innerText = '';
+            }, 3000);
+        }
+
+        if (typeof loadHistory === 'function') loadHistory();
+    }
 }
 
 // ── Attachments ───────────────────────────────────────────────────────────

@@ -187,8 +187,43 @@ function confirmColumnMapping() {
 
 // ── Send All ──────────────────────────────────────────────────────────────
 async function handleBulkSendAll() {
-    if (!approvalQueue.length) { alert("Generate emails first."); return; }
+    if (!uploadedBulkData || !uploadedBulkData.length) {
+        alert("Please upload and map a CSV or Excel file first.");
+        return;
+    }
+
     const btn = document.getElementById('btn-bulk-send-all');
+    
+    // 1. If emails have not been generated yet, generate them first!
+    if (!approvalQueue.length) {
+        const genBtn = document.getElementById('btn-bulk-generate');
+        setBtnLoading(btn, true, "⏳ Generating...");
+        if (genBtn) setBtnLoading(genBtn, true, "⏳ Generating...");
+
+        const payload = {
+            rows:        uploadedBulkData,
+            purpose:     getVal('bulk-common-purpose'),
+            ai_provider: getActiveProvider(),
+            model:       getActiveModel(),
+            subject:     getVal('bulk-subject-template'),
+        };
+        const result = await pywebview.api.generate_bulk(payload);
+        if (genBtn) setBtnLoading(genBtn, false);
+
+        if (!result.success) {
+            setBtnLoading(btn, false);
+            alert("Generation failed: " + result.error);
+            return;
+        }
+
+        approvalQueue      = result.emails;
+        currentApprovalIdx = 0;
+        document.getElementById('approval-section').style.display = 'block';
+        showApprovalEmail(currentApprovalIdx);
+        updateBulkProgress(0, approvalQueue.length);
+    }
+
+    // 2. Send all emails
     setBtnLoading(btn, true, "⏳ Sending...");
 
     // Show SMTP console
@@ -197,12 +232,12 @@ async function handleBulkSendAll() {
 
     const delay = parseInt(getVal('email-delay-seconds') || "2");
     const result = await pywebview.api.send_bulk({
-        emails:   approvalQueue,
+        emails:        approvalQueue,
         smtp_provider: getVal('smtp-provider-settings'),
         smtp_email:    getVal('smtp-email-settings'),
         smtp_password: getVal('smtp-password-settings'),
         delay_seconds: delay,
-        log_id: 'bulk',
+        log_id:        'bulk',
     });
     setBtnLoading(btn, false);
     if (result.success) {

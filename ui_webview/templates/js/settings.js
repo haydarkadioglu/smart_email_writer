@@ -117,6 +117,7 @@ async function clearUsageLogs() {
 // ── Bind settings & profile events ────────────────────────────────────────
 function bindProfileAndSettingsEvents() {
     document.getElementById('btn-save-profile')?.addEventListener('click',  saveProfile);
+    document.getElementById('btn-generate-chat-summary')?.addEventListener('click', generateProfileFromChat);
     document.getElementById('btn-clear-history')?.addEventListener('click', clearHistory);
     document.getElementById('btn-save-settings')?.addEventListener('click', saveSettings);
     document.getElementById('btn-test-smtp')?.addEventListener('click',     testSmtpConnection);
