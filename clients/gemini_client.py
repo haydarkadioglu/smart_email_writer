@@ -116,15 +116,18 @@ class GeminiClient:
 
             TASK: Write a complete email based on the following information:
 
-            PURPOSE/TOPIC: {purpose}
+            *** PRIMARY GOAL (follow this EXACTLY and stay laser-focused on it) ***
+            PURPOSE: {purpose}
+            *** The entire email must revolve around this purpose. Do NOT add unrelated content, do NOT expand beyond what is stated, do NOT change the intent. ***
+
             RECIPIENT: {recipient_name}
-            ADDITIONAL CONTEXT: {additional_context}
+            ADDITIONAL CONTEXT (personalization only, do not override purpose): {additional_context}
             AUTHOR PROFILE: {profile_text}
             EMAIL LENGTH: {email_length}
 
             REQUIREMENTS:
-            - Write a professional email that addresses the purpose/topic
-            - If this appears to be a job application, write a compelling cover letter
+            - The email MUST directly and faithfully address the PURPOSE above — this is the #1 rule
+            - Do NOT invent topics, goals, or content not mentioned in the purpose
             - Use the author profile to personalize the email appropriately
             - Keep the tone {tone.lower()} and language {language}
             - Make it engaging and relevant to the recipient
