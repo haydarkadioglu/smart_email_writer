@@ -169,6 +169,7 @@ class BulkSendMixin:
             smtp_password  = payload.get("smtp_password", "")
             delay_seconds  = float(payload.get("delay_seconds", 2.0))
             log_id         = payload.get("log_id", "bulk")
+            attachments    = payload.get("attachments", [])
 
             def js_log(msg: str):
                 try:
@@ -180,7 +181,8 @@ class BulkSendMixin:
 
             sent  = 0
             total = len(emails)
-            js_log(f"[BULK] Starting: {total} emails via {smtp_provider}")
+            attach_note = f" (+{len(attachments)} attachment(s))" if attachments else ""
+            js_log(f"[BULK] Starting: {total} emails via {smtp_provider}{attach_note}")
             for i, email_data in enumerate(emails):
                 recipient = email_data.get("to")
                 subject   = email_data.get("subject")
@@ -193,7 +195,7 @@ class BulkSendMixin:
                     recipient_email=recipient,
                     subject=subject,
                     body=body,
-                    attachment_paths=[],
+                    attachment_paths=attachments,
                     log_to_excel=True,
                     log_cb=None
                 )

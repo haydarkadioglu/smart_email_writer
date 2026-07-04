@@ -350,6 +350,16 @@
                     </div>
                 </div>
 
+                <!-- Bulk Attachments -->
+                <div style="margin-bottom:12px;">
+                    <label class="form-label">📎 Attachments (sent with every email)</label>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;">
+                        <button id="btn-bulk-attach" class="btn btn-secondary" style="white-space:nowrap;">📎 Add Files</button>
+                        <div id="bulk-attachment-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                    </div>
+                    <div id="flash-bulk-attach" class="flash" style="display:none;margin-top:6px;"></div>
+                </div>
+
                 <div class="bulk-sending-actions" style="display:flex;gap:12px;flex-wrap:wrap">
                     <button id="btn-bulk-preview"  class="btn btn-secondary">👁 Preview First 5</button>
                     <button id="btn-bulk-generate" class="btn btn-primary">✦ Generate All</button>

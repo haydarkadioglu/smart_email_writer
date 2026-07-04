@@ -5,6 +5,7 @@
 let uploadedBulkData   = [];   // rows parsed from CSV/Excel
 let approvalQueue      = [];   // [{recipient, subject, body}]
 let currentApprovalIdx = 0;
+let bulkAttachments    = [];   // file paths to attach to every bulk email
 
 function bindBulkEmailEvents() {
     // Upload area
@@ -29,6 +30,7 @@ function bindBulkEmailEvents() {
     document.getElementById('btn-bulk-preview').addEventListener('click', handleBulkPreview);
     document.getElementById('btn-bulk-generate').addEventListener('click', handleBulkGenerate);
     document.getElementById('btn-bulk-send-all').addEventListener('click', handleBulkSendAll);
+    document.getElementById('btn-bulk-attach')?.addEventListener('click',  handleBulkAttach);
 
     // Approval workflow navigation
     document.getElementById('btn-approve-send').addEventListener('click',  handleApproveSend);
@@ -237,6 +239,7 @@ async function handleBulkSendAll() {
         smtp_email:    getVal('smtp-email-settings'),
         smtp_password: getVal('smtp-password-settings'),
         delay_seconds: delay,
+        attachments:   bulkAttachments,
         log_id:        'bulk',
     });
     setBtnLoading(btn, false);
@@ -294,4 +297,29 @@ function handleApproveEdit() {
     const textarea = document.getElementById('approval-body-editor');
     textarea.focus();
     textarea.setSelectionRange(0, 0);
+}
+
+// ── Bulk Attachments ──────────────────────────────────────────────────────
+async function handleBulkAttach() {
+    const result = await pywebview.api.pick_files({ multiple: true });
+    if (!result || !result.length) return;
+
+    const list = document.getElementById('bulk-attachment-list');
+    result.forEach(path => {
+        if (bulkAttachments.includes(path)) return;   // no duplicates
+        bulkAttachments.push(path);
+
+        const name = path.split(/[/\\]/).pop();
+        const tag  = document.createElement('div');
+        tag.className = 'attachment-item';
+        tag.dataset.path = path;
+        tag.innerHTML = `<span title="${path}">${name}</span>
+            <button class="remove-attach" onclick="removeBulkAttachment(this, '${path.replace(/'/g, "\\'")}')">✕</button>`;
+        list.appendChild(tag);
+    });
+}
+
+function removeBulkAttachment(btn, path) {
+    bulkAttachments = bulkAttachments.filter(p => p !== path);
+    btn.closest('.attachment-item').remove();
 }
