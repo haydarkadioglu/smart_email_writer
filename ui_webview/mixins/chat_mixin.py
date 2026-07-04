@@ -76,12 +76,18 @@ class ChatMixin:
           attachment_path str  - optional path to attached file
         """
         try:
-            session_id      = payload.get("session_id", "")
-            user_message    = payload.get("message", "").strip()
-            save_as_draft   = payload.get("save_as_draft", True)
-            attachment_path = payload.get("attachment_path", "").strip()
+            session_id       = payload.get("session_id", "")
+            user_message     = payload.get("message", "").strip()
+            save_as_draft    = payload.get("save_as_draft", True)
+            # Accept both new multi-file 'attachment_paths' list and legacy single 'attachment_path'
+            raw_paths        = payload.get("attachment_paths", None)
+            if raw_paths is None:
+                single = payload.get("attachment_path", "").strip()
+                attachment_paths = [single] if single else []
+            else:
+                attachment_paths = [p for p in raw_paths if p]
 
-            if not user_message and not attachment_path:
+            if not user_message and not attachment_paths:
                 return {"success": False, "error": "Empty message"}
 
             settings = self.settings_store.load()
@@ -89,36 +95,39 @@ class ChatMixin:
             model_name = settings.get(provider + "_model", "")
             profile    = self.profile_store.load()
 
-            # ── Read Attachment content for context ──────────────────────────
+            # ── Read each Attachment's content for context ───────────────────
             file_context = ""
-            if attachment_path:
-                from pathlib import Path
+            from pathlib import Path
+            for attachment_path in attachment_paths:
                 p = Path(attachment_path)
-                if p.exists():
-                    ext = p.suffix.lower()
-                    try:
-                        if ext in ['.pdf', '.docx', '.txt', '.md']:
-                            file_text = self._extract_text(p, ext)
-                            file_context = f"\n\n--- ATTACHED FILE CONTENT ({p.name}) ---\n{file_text[:8000]}\n--- END ATTACHED FILE ---\n"
-                        elif ext in ['.csv', '.xlsx', '.xls']:
-                            import pandas as pd
-                            if ext == '.csv':
-                                df = pd.read_csv(p)
-                            else:
-                                df = pd.read_excel(p)
-                            total_rows = len(df)
-                            df_str = df.to_string(max_rows=None)
-                            batch_instruction = (
-                                f"\n\nIMPORTANT: This CSV has {total_rows} rows. "
-                                "Process ALL rows and generate one email per row with a non-empty Email field. "
-                                "If you cannot fit everything in a single response, output as many as possible, "
-                                "then end your JSON array with \"...CONTINUED\" as the last string element so the "
-                                "system knows to ask you to continue. "
-                                "On continuation, resume from where you left off — never repeat already-generated rows."
-                            )
-                            file_context = f"\n\n--- ATTACHED CSV ({p.name}, {total_rows} rows) ---\n{df_str}\n--- END CSV ---\n{batch_instruction}\n"
-                    except Exception as fe:
-                        file_context = f"\n\n[Error reading attached file {p.name}: {fe}]\n"
+                if not p.exists():
+                    continue
+                ext = p.suffix.lower()
+                try:
+                    if ext in ['.pdf', '.docx', '.txt', '.md']:
+                        file_text = self._extract_text(p, ext)
+                        file_context += f"\n\n--- ATTACHED FILE CONTENT ({p.name}) ---\n{file_text[:8000]}\n--- END ATTACHED FILE ---\n"
+                    elif ext in ['.csv', '.xlsx', '.xls']:
+                        import pandas as pd
+                        if ext == '.csv':
+                            df = pd.read_csv(p)
+                        else:
+                            df = pd.read_excel(p)
+                        total_rows = len(df)
+                        df_str = df.to_string(max_rows=None)
+                        batch_instruction = (
+                            f"\n\nIMPORTANT: This CSV has {total_rows} rows. "
+                            "Process ALL rows and generate one email per row with a non-empty Email field. "
+                            "If you cannot fit everything in a single response, output as many as possible, "
+                            "then end your JSON array with \"...CONTINUED\" as the last string element so the "
+                            "system knows to ask you to continue. "
+                            "On continuation, resume from where you left off — never repeat already-generated rows."
+                        )
+                        file_context += f"\n\n--- ATTACHED CSV ({p.name}, {total_rows} rows) ---\n{df_str}\n--- END CSV ---\n{batch_instruction}\n"
+                    elif ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
+                        file_context += f"\n\n[Image attached: {p.name} — describe or reference this image as needed]\n"
+                except Exception as fe:
+                    file_context += f"\n\n[Error reading attached file {p.name}: {fe}]\n"
 
             # ── Build conversation context ──────────────────────────────────
             session = self.chat_store.get_session(session_id)
@@ -180,10 +189,10 @@ class ChatMixin:
 
             # ── Save user message ───────────────────────────────────────────
             saved_user_message = user_message
-            if attachment_path:
+            if attachment_paths:
                 import os
-                filename = os.path.basename(attachment_path)
-                saved_user_message = f"📎 [Attached: {filename}]\n{user_message}"
+                filenames = ", ".join(os.path.basename(p) for p in attachment_paths)
+                saved_user_message = f"📎 [Attached: {filenames}]\n{user_message}"
             
             self.chat_store.append_message(session_id, "user", saved_user_message)
 
@@ -219,7 +228,7 @@ class ChatMixin:
 
             if msg_type == "draft" and save_as_draft:
                 for email_data in parsed.get("emails", []):
-                    attachments = [attachment_path] if attachment_path else []
+                    attachments = attachment_paths if attachment_paths else []
                     draft = self.draft_store.create(
                         to=email_data.get("to", ""),
                         subject=email_data.get("subject", ""),

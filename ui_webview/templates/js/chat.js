@@ -2,9 +2,8 @@
    chat.js  –  AI Chat tab logic
    ========================================================================== */
 
-let activeChatSessionId = null;
-let activeChatAttachmentPath = null;
-let activeChatAttachmentName = '';
+let activeChatSessionId      = null;
+let activeChatAttachmentPaths = [];   // [{path, name}]
 
 // ── Init ──────────────────────────────────────────────────────────────────
 async function initChatTab() {
@@ -85,32 +84,39 @@ function renderChatHistory(messages) {
 // ── Sending ───────────────────────────────────────────────────────────────
 async function attachFileToChat() {
     const res = await pywebview.api.pick_files({
-        multiple: false,
-        file_types: ['.pdf', '.docx', '.txt', '.md', '.csv', '.xlsx', '.xls']
+        multiple: true,
+        file_types: ['.pdf', '.docx', '.txt', '.md', '.csv', '.xlsx', '.xls', '.png', '.jpg']
     });
     if (!res || !res.length) return;
 
-    const file_path = Array.isArray(res) ? res[0] : res;
-    activeChatAttachmentPath = file_path;
-
-    const parts = file_path.split(/[/\\]/);
-    activeChatAttachmentName = parts[parts.length - 1];
-
-    const preview = document.getElementById('chat-attachment-preview');
-    const nameEl = document.getElementById('chat-attachment-name');
-    if (preview && nameEl) {
-        nameEl.innerText = activeChatAttachmentName;
-        preview.style.display = 'flex';
-    }
+    const paths = Array.isArray(res) ? res : [res];
+    paths.forEach(file_path => {
+        if (activeChatAttachmentPaths.some(a => a.path === file_path)) return; // no duplicates
+        const parts = file_path.split(/[/\\]/);
+        activeChatAttachmentPaths.push({ path: file_path, name: parts[parts.length - 1] });
+    });
+    renderChatAttachmentPreview();
 }
 
-function removeChatAttachment() {
-    activeChatAttachmentPath = null;
-    activeChatAttachmentName = '';
+function renderChatAttachmentPreview() {
     const preview = document.getElementById('chat-attachment-preview');
-    if (preview) {
+    if (!preview) return;
+    if (!activeChatAttachmentPaths.length) {
         preview.style.display = 'none';
+        preview.innerHTML = '';
+        return;
     }
+    preview.style.display = 'flex';
+    preview.innerHTML = activeChatAttachmentPaths.map((a, i) => `
+        <span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:2px 8px;font-size:12px;">
+            📎 ${escapeHtml(a.name)}
+            <span onclick="removeChatAttachment(${i})" style="cursor:pointer;color:var(--danger-color);font-weight:bold;margin-left:4px;">✕</span>
+        </span>`).join('');
+}
+
+function removeChatAttachment(idx) {
+    activeChatAttachmentPaths.splice(idx, 1);
+    renderChatAttachmentPreview();
 }
 
 async function sendChatMessage() {
@@ -118,7 +124,7 @@ async function sendChatMessage() {
     const msg = input?.value?.trim();
     
     // Allow sending if there is either a text message or an attachment
-    if (!msg && !activeChatAttachmentPath) return;
+    if (!msg && !activeChatAttachmentPaths.length) return;
 
     if (!activeChatSessionId) {
         const res = await pywebview.api.chat_new_session();
@@ -126,14 +132,14 @@ async function sendChatMessage() {
         activeChatSessionId = res.session.id;
     }
 
-    const saveAsDraft = document.getElementById('chat-save-as-draft')?.checked ?? true;
-    const attachmentPath = activeChatAttachmentPath;
-    const attachmentName = activeChatAttachmentName;
+    const saveAsDraft   = document.getElementById('chat-save-as-draft')?.checked ?? true;
+    const attachments   = [...activeChatAttachmentPaths];
 
     // Build user message display
     let displayedMsg = msg || '';
-    if (attachmentName) {
-        displayedMsg = `📎 [Attached: ${attachmentName}]` + (msg ? `\n${msg}` : '');
+    if (attachments.length) {
+        const names = attachments.map(a => a.name).join(', ');
+        displayedMsg = `📎 [Attached: ${names}]` + (msg ? `\n${msg}` : '');
     }
 
     appendChatBubble('user', displayedMsg);
@@ -143,17 +149,18 @@ async function sendChatMessage() {
         input.value = '';
         input.style.height = 'auto';
     }
-    removeChatAttachment();
+    activeChatAttachmentPaths = [];
+    renderChatAttachmentPreview();
 
     // Typing indicator
     const typingId = 'typing-' + Date.now();
     appendTypingIndicator(typingId);
 
     const res = await pywebview.api.chat_send_message({
-        session_id:      activeChatSessionId,
-        message:         msg || '',
-        save_as_draft:   saveAsDraft,
-        attachment_path: attachmentPath || '',
+        session_id:       activeChatSessionId,
+        message:          msg || '',
+        save_as_draft:    saveAsDraft,
+        attachment_paths: attachments.map(a => a.path),
     });
 
     removeTypingIndicator(typingId);

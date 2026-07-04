@@ -173,41 +173,65 @@ class BulkFileMixin:
                 provider   = settings.get("ai_provider", "gemini")
                 model_name = settings.get(f"{provider}_model", GEMINI_MODEL)
 
-            profile   = self.profile_store.load()
+            profile = self.profile_store.load()
+            total   = len(rows)
+            emails  = []
 
-            emails = []
-            for r in rows:
-                name  = r.get("Name") or r.get("name") or r.get("recipient_name") or "Recipient"
-                email = r.get("Email") or r.get("email") or r.get("recipient_email") or ""
-                desc  = r.get("Description") or r.get("description") or r.get("purpose") or ""
+            for i, r in enumerate(rows):
+                # Capture values in local scope to avoid closure-in-loop bug
+                _name    = (r.get("Name") or r.get("name") or r.get("recipient_name") or "Recipient").strip()
+                _email   = (r.get("Email") or r.get("email") or r.get("recipient_email") or "").strip()
+                _desc    = (r.get("Description") or r.get("description") or r.get("purpose") or "").strip()
+                _company = (r.get("Company") or r.get("company") or "").strip()
 
-                personalized_context = f"Recipient: {name} ({email})\nDescription: {desc}\n"
+                # Report progress to UI
+                if hasattr(self, "window") and self.window:
+                    safe_name = _name.replace("'", "\\'")
+                    self.window.evaluate_js(
+                        f"updateBulkProgress({i}, {total}, '{safe_name}', true, 'AI', '')"
+                    )
+
+                personalized_context = f"Recipient: {_name}\nEmail: {_email}\n"
+                if _company:
+                    personalized_context += f"Company: {_company}\n"
+                if _desc:
+                    personalized_context += f"Context: {_desc}\n"
                 for k, v in r.items():
-                    if k.lower() not in ["name", "email", "description"]:
+                    if k.lower() not in ["name", "email", "description", "company",
+                                         "Name", "Email", "Company", "Description"]:
                         personalized_context += f"- {k}: {v}\n"
 
                 try:
-                    def do_generate(client, p, m):
+                    # Capture loop variables in a default-arg closure to avoid late binding
+                    def do_generate(client, p, m,
+                                    _n=_name, _pur=purpose, _ctx=personalized_context, _pr=profile):
                         return client.generate_email(
-                            purpose=purpose,
-                            recipient_name=name,
+                            purpose=_pur,
+                            recipient_name=_n,
                             tone="Professional",
                             language="Turkish",
-                            additional_context=personalized_context,
-                            profile=profile,
+                            additional_context=_ctx,
+                            profile=_pr,
                             email_length="Medium (3-4 paragraphs)"
                         )
-                    res = self._execute_with_fallback(provider, model_name, do_generate)
+                    res     = self._execute_with_fallback(provider, model_name, do_generate)
                     subject = res.subject
                     body    = res.body
-                except Exception:
-                    subject = subject_tpl
-                    body    = f"Merhaba {name},\n\nŞirketiniz {desc} ile ilgili..."
+                except Exception as gen_err:
+                    # Fallback to simple template
+                    subject = subject_tpl or f"Merhaba {_name}"
+                    body    = f"Merhaba {_name},\n\n{purpose}\n\nSaygılarımla"
                     for k, v in r.items():
-                        subject = subject.replace(f"{{{{{k}}}}}", str(v))
-                        body    = body.replace(f"{{{{{k}}}}}", str(v))
+                        subject = str(subject).replace(f"{{{{{k}}}}}", str(v))
+                        body    = str(body).replace(f"{{{{{k}}}}}", str(v))
 
-                emails.append({"to": email, "subject": subject, "body": body, "recipient_name": name})
+                emails.append({"to": _email, "subject": subject, "body": body, "recipient_name": _name})
+
+            # Final progress update
+            if hasattr(self, "window") and self.window:
+                self.window.evaluate_js(
+                    f"updateBulkProgress({total}, {total}, 'Done', true, 'AI', '')"
+                )
 
             return {"success": True, "emails": emails}
         except Exception as e:
