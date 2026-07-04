@@ -106,8 +106,17 @@ class ChatMixin:
                                 df = pd.read_csv(p)
                             else:
                                 df = pd.read_excel(p)
-                            df_str = df.head(50).to_string()
-                            file_context = f"\n\n--- ATTACHED FILE CONTENT ({p.name}) ---\n{df_str}\n--- END ATTACHED FILE ---\n"
+                            total_rows = len(df)
+                            df_str = df.to_string(max_rows=None)
+                            batch_instruction = (
+                                f"\n\nIMPORTANT: This CSV has {total_rows} rows. "
+                                "Process ALL rows and generate one email per row with a non-empty Email field. "
+                                "If you cannot fit everything in a single response, output as many as possible, "
+                                "then end your JSON array with \"...CONTINUED\" as the last string element so the "
+                                "system knows to ask you to continue. "
+                                "On continuation, resume from where you left off — never repeat already-generated rows."
+                            )
+                            file_context = f"\n\n--- ATTACHED CSV ({p.name}, {total_rows} rows) ---\n{df_str}\n--- END CSV ---\n{batch_instruction}\n"
                     except Exception as fe:
                         file_context = f"\n\n[Error reading attached file {p.name}: {fe}]\n"
 
@@ -180,6 +189,24 @@ class ChatMixin:
 
             # ── Parse AI response ───────────────────────────────────────────
             clean = raw_response.strip().strip("```json").strip("```").strip()
+
+            # Detect truncated / continued response
+            continuation_needed = False
+            partial_json = ""
+            if "...CONTINUED" in clean:
+                continuation_needed = True
+                # Strip the CONTINUED marker and any trailing partial JSON
+                clean_for_parse = clean.replace('"...CONTINUED"', '').rstrip(', \n')
+                # Try to close the JSON structure so we can parse what we have
+                for suffix in ['}', ']}', ']}}']:
+                    try:
+                        parsed_partial = json.loads(clean_for_parse + suffix)
+                        clean = json.dumps(parsed_partial)
+                        partial_json = clean
+                        break
+                    except Exception:
+                        continue
+
             try:
                 parsed = json.loads(clean)
             except json.JSONDecodeError:
@@ -202,6 +229,14 @@ class ChatMixin:
                     )
                     draft_ids.append(draft["id"])
 
+            # Build user-facing message
+            if msg_type == "draft":
+                count = len(parsed.get("emails", []))
+                if continuation_needed:
+                    assistant_content = f"✅ Generated {count} email(s) so far — list is long, continuing..."
+                else:
+                    assistant_content = parsed.get("message", f"✅ {count} email(s) generated.")
+
             # ── Save assistant message ──────────────────────────────────────
             self.chat_store.append_message(
                 session_id, "assistant", assistant_content,
@@ -209,11 +244,118 @@ class ChatMixin:
             )
 
             return {
-                "success":    True,
-                "type":       msg_type,
-                "message":    assistant_content,
-                "emails":     parsed.get("emails", []) if msg_type == "draft" else [],
-                "draft_ids":  draft_ids,
+                "success":              True,
+                "type":                 msg_type,
+                "message":              assistant_content,
+                "emails":               parsed.get("emails", []) if msg_type == "draft" else [],
+                "draft_ids":            draft_ids,
+                "continuation_needed":  continuation_needed,
+                "partial_json":         partial_json,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def chat_continue_generation(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Continue a truncated bulk email generation.
+        Sends a 'continue' prompt using existing session history so the AI picks up where it left off.
+        """
+        try:
+            session_id    = payload.get("session_id", "")
+            save_as_draft = payload.get("save_as_draft", True)
+            already_count = payload.get("already_count", 0)
+
+            settings   = self.settings_store.load()
+            provider   = settings.get("ai_provider", "gemini")
+            model_name = settings.get(provider + "_model", "")
+            profile    = self.profile_store.load()
+
+            session  = self.chat_store.get_session(session_id)
+            messages = session.get("messages", [])
+
+            history_text = ""
+            for m in messages[-20:]:
+                role_label = "User" if m["role"] == "user" else "Assistant"
+                history_text += f"{role_label}: {m['content']}\n\n"
+
+            profile_context = ""
+            if profile:
+                friendly_names = {
+                    "name": "Name", "email": "Email", "company": "Company",
+                    "role": "Role/Title", "about_me": "About Me",
+                }
+                extras = [f"{friendly_names.get(k, k.title())}: {v}" for k, v in profile.items() if v]
+                if extras:
+                    profile_context = "User Profile:\n" + "\n".join(extras) + "\n\n"
+
+            continue_prompt = (
+                SYSTEM_PROMPT + "\n\n"
+                + profile_context
+                + "Conversation so far:\n" + history_text
+                + f"User: Please CONTINUE generating the remaining emails. "
+                f"You have already generated {already_count} email(s). "
+                "Output ONLY the remaining ones in the same JSON draft format, starting from where you stopped."
+                "\n\nAssistant:"
+            )
+
+            def do_continue(client, p, m):
+                raw = client._call_raw(continue_prompt)
+                self._log_usage(p, m, continue_prompt, raw)
+                return raw
+
+            raw_response = self._execute_with_fallback(provider, model_name, do_continue)
+
+            # Same parse + continuation detection
+            clean = raw_response.strip().strip("```json").strip("```").strip()
+            continuation_needed = "...CONTINUED" in clean
+            if continuation_needed:
+                clean_for_parse = clean.replace('"...CONTINUED"', '').rstrip(', \n')
+                for suffix in ['}', ']}', ']}}']:
+                    try:
+                        parsed_partial = json.loads(clean_for_parse + suffix)
+                        clean = json.dumps(parsed_partial)
+                        break
+                    except Exception:
+                        continue
+
+            try:
+                parsed = json.loads(clean)
+            except json.JSONDecodeError:
+                parsed = {"type": "message", "message": raw_response.strip()}
+
+            msg_type  = parsed.get("type", "message")
+            draft_ids: List[str] = []
+
+            if msg_type == "draft" and save_as_draft:
+                for email_data in parsed.get("emails", []):
+                    draft = self.draft_store.create(
+                        to=email_data.get("to", ""),
+                        subject=email_data.get("subject", ""),
+                        body=email_data.get("body", ""),
+                        attachments=[],
+                        source="chat",
+                    )
+                    draft_ids.append(draft["id"])
+
+            total_now = already_count + len(parsed.get("emails", []))
+            if continuation_needed:
+                assistant_content = f"✅ {total_now} email(s) generated so far — continuing..."
+            else:
+                assistant_content = f"✅ Done! {total_now} email(s) generated in total."
+
+            self.chat_store.append_message(
+                session_id, "assistant", assistant_content,
+                extra={"draft_ids": draft_ids} if draft_ids else {}
+            )
+
+            return {
+                "success":             True,
+                "type":                msg_type,
+                "message":             assistant_content,
+                "emails":              parsed.get("emails", []) if msg_type == "draft" else [],
+                "draft_ids":           draft_ids,
+                "continuation_needed": continuation_needed,
+                "total_count":         total_now,
             }
         except Exception as e:
             return {"success": False, "error": str(e)}

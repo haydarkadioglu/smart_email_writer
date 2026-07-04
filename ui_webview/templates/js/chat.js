@@ -158,13 +158,47 @@ async function sendChatMessage() {
 
     removeTypingIndicator(typingId);
 
-    if (res.success) {
-        appendChatBubble('assistant', res.message, res.draft_ids);
-        if (res.draft_ids && res.draft_ids.length > 0) {
-            showFlash('flash-chat', `✔ ${res.draft_ids.length} draft(s) saved`, false);
-        }
-    } else {
+    if (!res.success) {
         appendChatBubble('assistant', '⚠ Error: ' + res.error);
+        await loadChatSessions();
+        return;
+    }
+
+    appendChatBubble('assistant', res.message, res.draft_ids);
+    if (res.draft_ids && res.draft_ids.length > 0) {
+        showFlash('flash-chat', `✔ ${res.draft_ids.length} draft(s) saved`, false);
+    }
+
+    // ── Auto-continue for large batch generation ─────────────────────────
+    if (res.continuation_needed) {
+        let totalDrafts = res.draft_ids ? res.draft_ids.length : 0;
+        let keepGoing   = true;
+
+        while (keepGoing) {
+            const contTypingId = 'typing-' + Date.now();
+            appendTypingIndicator(contTypingId);
+
+            const cont = await pywebview.api.chat_continue_generation({
+                session_id:    activeChatSessionId,
+                save_as_draft: saveAsDraft,
+                already_count: totalDrafts,
+            });
+
+            removeTypingIndicator(contTypingId);
+
+            if (!cont.success) {
+                appendChatBubble('assistant', '⚠ Continue error: ' + cont.error);
+                break;
+            }
+
+            appendChatBubble('assistant', cont.message, cont.draft_ids);
+            if (cont.draft_ids && cont.draft_ids.length > 0) {
+                totalDrafts += cont.draft_ids.length;
+                showFlash('flash-chat', `✔ ${totalDrafts} total draft(s) saved`, false);
+            }
+
+            keepGoing = !!cont.continuation_needed;
+        }
     }
 
     await loadChatSessions(); // refresh titles
