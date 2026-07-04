@@ -173,17 +173,22 @@ function confirmColumnMapping() {
         return;
     }
 
-    // Normalise each row to have standard keys
-    uploadedBulkData = uploadedBulkData.map(row => {
-        const normalised = Object.assign({}, row);
-        normalised.Name    = row[nameCol]    || '';
-        normalised.Email   = row[emailCol]   || '';
-        if (companyCol) normalised.Company  = row[companyCol] || '';
-        if (purposeCol) normalised.purpose  = row[purposeCol] || '';
-        return normalised;
-    });
+    // Normalise each row to have standard keys, then skip rows with no email
+    const totalBefore = uploadedBulkData.length;
+    uploadedBulkData = uploadedBulkData
+        .map(row => {
+            const normalised = Object.assign({}, row);
+            normalised.Name    = row[nameCol]    || '';
+            normalised.Email   = (row[emailCol]  || '').trim();
+            if (companyCol) normalised.Company = row[companyCol] || '';
+            if (purposeCol) normalised.purpose  = row[purposeCol] || '';
+            return normalised;
+        })
+        .filter(row => row.Email.length > 0);   // ← skip empty emails
 
-    showFlash('flash-mapping', `✔ Mapped ${uploadedBulkData.length} rows`);
+    const skipped = totalBefore - uploadedBulkData.length;
+    const skipMsg = skipped > 0 ? ` (${skipped} row${skipped > 1 ? 's' : ''} skipped — no email)` : '';
+    showFlash('flash-mapping', `✔ Mapped ${uploadedBulkData.length} recipients${skipMsg}`);
     document.getElementById('bulk-mapping-section').style.display = 'none';
 }
 
