@@ -102,8 +102,10 @@ class GroqClient:
             - Personalize using the author's profile
             - Follow the specified length: {email_length}
             - For "Very Short": write only 1 concise paragraph but still include greeting and closing, make line breaks and also add the links
-
             - Include greeting and closing
+            - ATTACHMENTS RULE: Only reference files that are explicitly mentioned as attached in the context/prompt (e.g. `📎 [Attached: filename]`). If only a CV/resume is attached, do NOT write "including my CV and academic certificates / references / transcripts / cover letter". ONLY mention the CV. Never assume or hallucinate attachments that were not uploaded by the user.
+            - LINKS/WEBSITES RULE: If the author's profile contains a Website, GitHub, or LinkedIn, and the email is an application, cover letter, or introductory email, you MUST naturally include these links in the body (e.g., "My portfolio is available at [Website]" or "You can find my projects at [GitHub]"). Do not omit them.
+
             - Return ONLY JSON with keys subject, body.
             """
         ).strip()

@@ -151,6 +151,11 @@ class OpenAICompatClient:
             You are a professional email writing assistant.
             Write a complete, {tone.lower()} email in {language}.
             Length: {email_length}.
+
+            CRITICAL RULES:
+            1. ATTACHMENTS: Only reference files that are explicitly mentioned as attached in the prompt/context. If only a CV/resume is attached, do NOT write "including my CV and academic certificates / references / transcripts / cover letter". ONLY mention the CV. Never assume or hallucinate attachments that were not uploaded by the user.
+            2. LINKS/WEBSITES: If the author's profile contains a Website, GitHub, or LinkedIn, and the email is an application, cover letter, or introductory email, you MUST naturally include these links in the body (e.g., "My portfolio is available at [Website]" or "You can find my projects at [GitHub]"). Do not omit them.
+
             Return ONLY a JSON object with keys "subject" and "body".
         """).strip()
 
